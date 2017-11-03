@@ -53,3 +53,9 @@ autom4te.cache
 build-aux
 config.h.in~
 m4
+Makefile.in
+aclocal.m4
+config.h.in
+configure
+src/Makefile.in
+src/ch-storage-server
