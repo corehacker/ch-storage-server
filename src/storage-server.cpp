@@ -30,7 +30,7 @@
 /*******************************************************************************
  * Copyright (c) 2017, Sandeep Prakash <123sandy@gmail.com>
  *
- * \file   main.cpp
+ * \file   storage-server.cpp
  *
  * \author Sandeep Prakash
  *
@@ -40,10 +40,16 @@
  *
  ******************************************************************************/
 
-#include <ch-cpp-utils/http-server.hpp>
+#include "storage-server.hpp"
 
-int main(int argc, char **argv) {
-	return 0;
+namespace SS {
+
+StorageServer::StorageServer() {
+	server = new HttpServer();
 }
 
+StorageServer::~StorageServer() {
 
+}
+
+} // End namespace SS.

@@ -129,6 +129,30 @@ AC_LANG_POP
 
 
 
+##########################################################################
+# check for ch-cpp-utils library
+##########################################################################
+#dnl add the external library to the list of libraries which will be used for our test program
+LIBS="-lch-cpp-utils $LIBS"
+
+AC_LANG_PUSH([C++])
+#dnl check for the presence of 'libtotest'
+AC_MSG_CHECKING([for the ch-cpp-utils availability])
+AC_LINK_IFELSE([
+                AC_LANG_PROGRAM([#include <ch-cpp-utils/http-server.hpp>],
+                                [ChCppUtils::Http::Server::HttpServer pool])
+                ],
+                [LIBCH_CH_CPP_UTILS_PRESENCE=1], [LIBCH_CH_CPP_UTILS_PRESENCE=0])
+
+if test "$LIBCH_CH_CPP_UTILS_PRESENCE" = "1"; then
+    AC_MSG_RESULT([found])
+else
+    AC_MSG_ERROR([not found !])
+fi
+AC_LANG_POP
+
+
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES(Makefile \
                 src/Makefile)
