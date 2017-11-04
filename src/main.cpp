@@ -41,8 +41,12 @@
  ******************************************************************************/
 
 #include <ch-cpp-utils/http-server.hpp>
+#include "storage-server.hpp"
+
+using SS::StorageServer;
 
 int main(int argc, char **argv) {
+
 	return 0;
 }
 

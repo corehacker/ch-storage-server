@@ -50,12 +50,18 @@ using ChCppUtils::Http::Server::HttpServer;
 
 namespace SS {
 
+
+
 class StorageServer {
 private:
 	HttpServer *server;
+
+	void _onRequest(RequestEvent *event, void *this_)
 public:
 	StorageServer();
+	StorageServer(uint16_t port);
 	~StorageServer();
+	void start();
 };
 
 } // End namespace SS.

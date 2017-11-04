@@ -45,10 +45,18 @@
 namespace SS {
 
 StorageServer::StorageServer() {
-	server = new HttpServer();
+	server = new HttpServer(8888);
+}
+
+StorageServer::StorageServer(uint16_t port) {
+	server = new HttpServer(port);
 }
 
 StorageServer::~StorageServer() {
+
+}
+
+void StorageServer::start() {
 
 }
 
