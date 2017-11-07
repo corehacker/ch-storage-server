@@ -40,12 +40,55 @@
  *
  ******************************************************************************/
 
+#include <stdlib.h>
+#include <signal.h>
+#include <csignal>
+#include <iostream>
 #include <ch-cpp-utils/http-server.hpp>
+#include <glog/logging.h>
 #include "storage-server.hpp"
 
 using SS::StorageServer;
+using SS::Config;
+
+static Config *config = nullptr;
+static StorageServer *server = nullptr;
+
+static void initEnv();
+static void deinitEnv();
+
+void signal_handler(int signal) {
+	LOG(INFO) << "Caught SIGINT...Stopping server...";
+	deinitEnv();
+}
+
+static void initEnv() {
+	config = new Config();
+	config->init();
+
+	server = new StorageServer(config);
+	server->start();
+}
+
+static void deinitEnv() {
+	LOG(INFO) << "Stopping server...";
+	server->stop();
+	LOG(INFO) << "Stopped server...";
+	delete server;
+	LOG(INFO) << "Deleted server...";
+	delete config;
+	LOG(INFO) << "Deleted config...";
+}
 
 int main(int argc, char **argv) {
+	// Install a signal handler
+//	std::signal(SIGINT, signal_handler);
+
+	initEnv();
+
+	THREAD_SLEEP_FOREVER;
+
+	deinitEnv();
 
 	return 0;
 }
