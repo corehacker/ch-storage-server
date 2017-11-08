@@ -1,0 +1,22 @@
+{
+    "server": {
+        "port": 8888
+    },
+    "storage": {
+        "root": "./data"
+    },
+    "streams": [
+        {
+            "name": "living-room-1",
+            "path": "/security/camera/living-1/media/*"
+        },
+        {
+            "name": "room-1",
+            "path": "/security/camera/room-1/media/*"
+        }
+    ],
+    "purge": {
+        "ttl-s": 60,
+        "interval-s": 2
+    }
+}

@@ -40,22 +40,75 @@
  *
  ******************************************************************************/
 
-
+#include "../third-party/json/json.hpp"
+#include <ch-cpp-utils/semaphore.hpp>
 #include <ch-cpp-utils/http-server.hpp>
+#include <ch-cpp-utils/timer.hpp>
+#include <ch-cpp-utils/utils.hpp>
 
 #ifndef SRC_STORAGE_SERVER_HPP_
 #define SRC_STORAGE_SERVER_HPP_
 
+using namespace std::chrono;
+
+using json = nlohmann::json;
+using ChCppUtils::Semaphore;
+using ChCppUtils::Http::Server::RequestEvent;
 using ChCppUtils::Http::Server::HttpServer;
+using ChCppUtils::Timer;
+using ChCppUtils::TimerEvent;
 
 namespace SS {
 
+class Config {
+public:
+	json mJson;
+
+	Config();
+	~Config();
+	void init();
+
+	uint16_t getPort();
+	string &getRoot();
+	uint32_t getPurgeTtlSec();
+	uint32_t getPurgeIntervalSec();
+
+private:
+	uint16_t mPort;
+	string mRoot;
+
+	uint32_t mPurgeTtlSec;
+	system_clock::time_point mPurgeTtlTp;
+	uint32_t mPurgeIntervalSec;
+
+	string etcConfigPath;
+	string localConfigPath;
+	string selectedConfigPath;
+
+	bool getConfigFile();
+	bool validateConfigFile();
+};
+
 class StorageServer {
 private:
-	HttpServer *server;
+	HttpServer *mServer;
+	Timer *mTimer;
+	TimerEvent *mTimerEvent;
+	Config *mConfig;
+	Semaphore mExitSem;
+
+	static void _onRequest(RequestEvent *event, void *this_);
+	void onRequest(RequestEvent *event);
+
+	static void _onTimerEvent(TimerEvent *event, void *this_);
+	void onTimerEvent(TimerEvent *event);
+
+	void registerPaths();
 public:
-	StorageServer();
+	StorageServer(Config *config);
 	~StorageServer();
+	void start();
+	void stop();
 };
 
 } // End namespace SS.

@@ -59,3 +59,4 @@ config.h.in
 configure
 src/Makefile.in
 src/ch-storage-server
+data/*
