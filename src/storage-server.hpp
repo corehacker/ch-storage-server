@@ -44,9 +44,12 @@
 #include <ch-cpp-utils/semaphore.hpp>
 #include <ch-cpp-utils/http-server.hpp>
 #include <ch-cpp-utils/timer.hpp>
+#include <ch-cpp-utils/utils.hpp>
 
 #ifndef SRC_STORAGE_SERVER_HPP_
 #define SRC_STORAGE_SERVER_HPP_
+
+using namespace std::chrono;
 
 using json = nlohmann::json;
 using ChCppUtils::Semaphore;
@@ -67,10 +70,16 @@ public:
 
 	uint16_t getPort();
 	string &getRoot();
+	uint32_t getPurgeTtlSec();
+	uint32_t getPurgeIntervalSec();
 
 private:
 	uint16_t mPort;
 	string mRoot;
+
+	uint32_t mPurgeTtlSec;
+	system_clock::time_point mPurgeTtlTp;
+	uint32_t mPurgeIntervalSec;
 
 	string etcConfigPath;
 	string localConfigPath;

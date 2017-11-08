@@ -14,5 +14,9 @@
             "name": "room-1",
             "path": "/security/camera/room-1/media/*"
         }
-    ]
+    ],
+    "purge": {
+        "ttl-s": 60,
+        "interval-s": 2
+    }
 }
