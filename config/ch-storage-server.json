@@ -8,11 +8,11 @@
     "streams": [
         {
             "name": "living-room-1",
-            "path": "/security/camera/living-1/media/*"
+            "path": "/security/camera/media/living-1/*"
         },
         {
             "name": "room-1",
-            "path": "/security/camera/room-1/media/*"
+            "path": "/security/camera/media/room-1/*"
         }
     ],
     "purge": {
