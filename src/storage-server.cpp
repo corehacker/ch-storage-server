@@ -45,6 +45,7 @@
 #include <string>
 #include <sys/types.h>
 #include <chrono>
+#include <cstdio>
 
 #include <glog/logging.h>
 #include <ch-cpp-utils/utils.hpp>
@@ -234,7 +235,15 @@ void StorageServer::onTimerEvent(TimerEvent *event) {
 		for(auto file : files) {
 			string path = destination + file;
 			bool markForDelete = fileExpired(path, mConfig->getPurgeTtlSec());
-			LOG(INFO) << "File: " << path << ", Elapsed: " << ", Delete? " << markForDelete;
+			LOG(INFO) << "File: " << path << ", Delete? " << markForDelete;
+			if(markForDelete) {
+				if(0 != std::remove(path.data())) {
+					LOG(ERROR) << "File: " << path << ", marked for Delete? failed to delete";
+					perror("remove");
+				} else {
+					LOG(INFO) << "File: " << path << ", marked for Delete? Deleted successfully";
+				}
+			}
 		}
 	}
 
