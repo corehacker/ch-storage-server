@@ -1,4 +1,7 @@
 {
+    "console": true,
+    "daemon": false,
+    "run-for": 600000,
     "server": {
         "port": 8888
     },

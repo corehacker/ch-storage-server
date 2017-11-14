@@ -45,11 +45,13 @@
 #include <csignal>
 #include <iostream>
 #include <ch-cpp-utils/http-server.hpp>
+#include <ch-cpp-utils/utils.hpp>
 #include <glog/logging.h>
 #include "storage-server.hpp"
 
 using SS::StorageServer;
 using SS::Config;
+using ChCppUtils::daemonizeProcess;
 
 static Config *config = nullptr;
 static StorageServer *server = nullptr;
@@ -66,6 +68,18 @@ static void initEnv() {
 	config = new Config();
 	config->init();
 
+	// Initialize Google's logging library.
+	if(config->shouldLogToConsole()) {
+		LOG(INFO) << "LOGGING to console.";
+	} else {
+		LOG(INFO) << "Not LOGGING to console.";
+		google::InitGoogleLogging("ch-storage-server");
+	}
+
+	if(config->shouldDaemon()) {
+		daemonizeProcess();
+	}
+
 	server = new StorageServer(config);
 	server->start();
 }
@@ -80,13 +94,19 @@ static void deinitEnv() {
 	LOG(INFO) << "Deleted config...";
 }
 
+#define THREAD_SLEEP_120S \
+   do { \
+      std::chrono::milliseconds ms(60 * 60 * 6 * 1000); \
+      std::this_thread::sleep_for(ms); \
+   } while(0)
+
 int main(int argc, char **argv) {
 	// Install a signal handler
 //	std::signal(SIGINT, signal_handler);
 
 	initEnv();
 
-	THREAD_SLEEP_FOREVER;
+	THREAD_SLEEP(config->getRunFor());
 
 	deinitEnv();
 

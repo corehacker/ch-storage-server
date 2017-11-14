@@ -81,6 +81,8 @@ Config::Config() {
 	mRoot = "";
 	mPurgeIntervalSec = 60;
 	mPurgeTtlSec = 60;
+
+	mRunFor = 30000;
 }
 
 Config::~Config() {
@@ -123,6 +125,15 @@ bool Config::validateConfigFile() {
 	mPurgeIntervalSec = mJson["purge"]["interval-s"];
 	LOG(INFO) << "purge.interval-s: " << mPurgeIntervalSec;
 
+	mRunFor = mJson["run-for"];
+	LOG(INFO) << "run-for: " << mRunFor;
+
+	mLogToConsole = mJson["console"];
+	LOG(INFO) << "console: " << mLogToConsole;
+
+	mDaemon = mJson["daemon"];
+	LOG(INFO) << "daemon: " << mDaemon;
+
 	LOG(INFO) << "----------------------->Config";
 	return true;
 }
@@ -155,6 +166,18 @@ uint32_t Config::getPurgeTtlSec() {
 
 uint32_t Config::getPurgeIntervalSec() {
 	return mPurgeIntervalSec;
+}
+
+uint32_t Config::getRunFor() {
+	return mRunFor;
+}
+
+bool Config::shouldLogToConsole() {
+	return mLogToConsole;
+}
+
+bool Config::shouldDaemon() {
+	return mDaemon;
 }
 
 StorageServer::StorageServer(Config *config) {
@@ -191,8 +214,7 @@ void StorageServer::onRequest(RequestEvent *event) {
 
 	if(event->hasBody()) {
 		void *body = event->getBody();
-		LOG(INFO) << "Body: " << event->getLength() << " bytes, content: " <<
-				(char *) body;
+		LOG(INFO) << "Body: " << event->getLength() << " bytes";
 
 		string destination = mConfig->getRoot();
 		destination += event->getPath();
@@ -223,10 +245,7 @@ void StorageServer::_onTimerEvent(TimerEvent *event, void *this_) {
 }
 
 void StorageServer::onTimerEvent(TimerEvent *event) {
-	LOG(INFO) << "Timer fired!!";
-
 	for(auto stream : mConfig->mJson["streams"]) {
-		LOG(INFO) << "Stream: " << stream;
 		string destination = mConfig->getRoot();
 		destination += stream["path"];
 		destination = trim(destination);
@@ -235,13 +254,12 @@ void StorageServer::onTimerEvent(TimerEvent *event) {
 		for(auto file : files) {
 			string path = destination + file;
 			bool markForDelete = fileExpired(path, mConfig->getPurgeTtlSec());
-			LOG(INFO) << "File: " << path << ", Delete? " << markForDelete;
 			if(markForDelete) {
 				if(0 != std::remove(path.data())) {
-					LOG(ERROR) << "File: " << path << ", marked for Delete? failed to delete";
+					LOG(ERROR) << "File: " << path << ", marked for Delete! failed to delete";
 					perror("remove");
 				} else {
-					LOG(INFO) << "File: " << path << ", marked for Delete? Deleted successfully";
+					LOG(INFO) << "File: " << path << ", marked for Delete! Deleted successfully";
 				}
 			}
 		}
