@@ -80,13 +80,19 @@ static void deinitEnv() {
 	LOG(INFO) << "Deleted config...";
 }
 
+#define THREAD_SLEEP_120S \
+   do { \
+      std::chrono::milliseconds ms(60 * 60 * 6 * 1000); \
+      std::this_thread::sleep_for(ms); \
+   } while(0)
+
 int main(int argc, char **argv) {
 	// Install a signal handler
 //	std::signal(SIGINT, signal_handler);
 
 	initEnv();
 
-	THREAD_SLEEP_FOREVER;
+	THREAD_SLEEP(config->getRunFor());
 
 	deinitEnv();
 

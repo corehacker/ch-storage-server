@@ -72,6 +72,7 @@ public:
 	string &getRoot();
 	uint32_t getPurgeTtlSec();
 	uint32_t getPurgeIntervalSec();
+	uint32_t getRunFor();
 
 private:
 	uint16_t mPort;
@@ -84,6 +85,7 @@ private:
 	string etcConfigPath;
 	string localConfigPath;
 	string selectedConfigPath;
+	uint32_t mRunFor;
 
 	bool getConfigFile();
 	bool validateConfigFile();
