@@ -128,6 +128,12 @@ bool Config::validateConfigFile() {
 	mRunFor = mJson["run-for"];
 	LOG(INFO) << "run-for: " << mRunFor;
 
+	mLogToConsole = mJson["console"];
+	LOG(INFO) << "console: " << mLogToConsole;
+
+	mDaemon = mJson["daemon"];
+	LOG(INFO) << "daemon: " << mDaemon;
+
 	LOG(INFO) << "----------------------->Config";
 	return true;
 }
@@ -164,6 +170,14 @@ uint32_t Config::getPurgeIntervalSec() {
 
 uint32_t Config::getRunFor() {
 	return mRunFor;
+}
+
+bool Config::shouldLogToConsole() {
+	return mLogToConsole;
+}
+
+bool Config::shouldDaemon() {
+	return mDaemon;
 }
 
 StorageServer::StorageServer(Config *config) {

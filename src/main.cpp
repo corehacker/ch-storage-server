@@ -66,6 +66,14 @@ static void initEnv() {
 	config = new Config();
 	config->init();
 
+	// Initialize Google's logging library.
+	if(config->shouldLogToConsole()) {
+		LOG(INFO) << "LOGGING to console.";
+	} else {
+		LOG(INFO) << "Not LOGGING to console.";
+		google::InitGoogleLogging("ch-storage-server");
+	}
+
 	server = new StorageServer(config);
 	server->start();
 }
