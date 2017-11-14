@@ -45,11 +45,13 @@
 #include <csignal>
 #include <iostream>
 #include <ch-cpp-utils/http-server.hpp>
+#include <ch-cpp-utils/utils.hpp>
 #include <glog/logging.h>
 #include "storage-server.hpp"
 
 using SS::StorageServer;
 using SS::Config;
+using ChCppUtils::daemonizeProcess;
 
 static Config *config = nullptr;
 static StorageServer *server = nullptr;
@@ -72,6 +74,10 @@ static void initEnv() {
 	} else {
 		LOG(INFO) << "Not LOGGING to console.";
 		google::InitGoogleLogging("ch-storage-server");
+	}
+
+	if(config->shouldDaemon()) {
+		daemonizeProcess();
 	}
 
 	server = new StorageServer(config);
