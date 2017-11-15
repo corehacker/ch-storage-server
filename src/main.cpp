@@ -76,7 +76,7 @@ static void initEnv() {
 		google::InitGoogleLogging("ch-storage-server");
 	}
 
-	if(config->shouldDaemon()) {
+	if(config->isDaemon()) {
 		daemonizeProcess();
 	}
 

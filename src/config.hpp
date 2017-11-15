@@ -30,7 +30,7 @@
 /*******************************************************************************
  * Copyright (c) 2017, Sandeep Prakash <123sandy@gmail.com>
  *
- * \file   storage-server.hpp
+ * \file   config.hpp
  *
  * \author Sandeep Prakash
  *
@@ -39,54 +39,46 @@
  * \brief
  *
  ******************************************************************************/
-
-#include <ch-cpp-utils/semaphore.hpp>
-#include <ch-cpp-utils/http-server.hpp>
-#include <ch-cpp-utils/timer.hpp>
+#include <vector>
+#include <string>
 #include <ch-cpp-utils/utils.hpp>
-#include "config.hpp"
+#include <ch-cpp-utils/config.hpp>
 
-#ifndef SRC_STORAGE_SERVER_HPP_
-#define SRC_STORAGE_SERVER_HPP_
+#ifndef SRC_CONFIG_HPP_
+#define SRC_CONFIG_HPP_
 
-using namespace std::chrono;
-
-using ChCppUtils::Semaphore;
-using ChCppUtils::Http::Server::RequestEvent;
-using ChCppUtils::Http::Server::HttpServer;
-using ChCppUtils::Timer;
-using ChCppUtils::TimerEvent;
+using std::vector;
+using std::string;
 
 namespace SS {
 
-class StorageServer {
-private:
-	HttpServer *mServer;
-	Timer *mTimer;
-	TimerEvent *mTimerEvent;
-	Config *mConfig;
-	Semaphore mExitSem;
-
-	string getDestinationPath(RequestEvent *event);
-
-	static void _onRequest(RequestEvent *event, void *this_);
-	void onRequest(RequestEvent *event);
-
-	static void _onFilePurge (string name, string ext, string path, void *this_);
-	void onFilePurge (string name, string ext, string path);
-
-	static void _onTimerEvent(TimerEvent *event, void *this_);
-	void onTimerEvent(TimerEvent *event);
-
-	void registerPaths();
+class Config : public ChCppUtils::Config {
 public:
-	StorageServer(Config *config);
-	~StorageServer();
-	void start();
-	void stop();
+	Config();
+	~Config();
+	void init();
+
+	uint16_t getPort();
+	string &getRoot();
+	uint32_t getPurgeTtlSec();
+	uint32_t getPurgeIntervalSec();
+
+private:
+	uint16_t mPort;
+	string mRoot;
+
+	uint32_t mPurgeTtlSec;
+	system_clock::time_point mPurgeTtlTp;
+	uint32_t mPurgeIntervalSec;
+
+	string etcConfigPath;
+	string localConfigPath;
+	string selectedConfigPath;
+
+	bool populateConfigValues();
 };
 
-} // End namespace SS.
+} // End namespace SC.
 
 
-#endif /* SRC_STORAGE_SERVER_HPP_ */
+#endif /* SRC_CONFIG_HPP_ */

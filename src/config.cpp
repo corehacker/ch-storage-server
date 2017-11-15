@@ -30,7 +30,7 @@
 /*******************************************************************************
  * Copyright (c) 2017, Sandeep Prakash <123sandy@gmail.com>
  *
- * \file   storage-server.hpp
+ * \file   config.cpp
  *
  * \author Sandeep Prakash
  *
@@ -39,54 +39,67 @@
  * \brief
  *
  ******************************************************************************/
+#include <string>
+#include <glog/logging.h>
 
-#include <ch-cpp-utils/semaphore.hpp>
-#include <ch-cpp-utils/http-server.hpp>
-#include <ch-cpp-utils/timer.hpp>
-#include <ch-cpp-utils/utils.hpp>
 #include "config.hpp"
 
-#ifndef SRC_STORAGE_SERVER_HPP_
-#define SRC_STORAGE_SERVER_HPP_
-
-using namespace std::chrono;
-
-using ChCppUtils::Semaphore;
-using ChCppUtils::Http::Server::RequestEvent;
-using ChCppUtils::Http::Server::HttpServer;
-using ChCppUtils::Timer;
-using ChCppUtils::TimerEvent;
+using std::ifstream;
 
 namespace SS {
 
-class StorageServer {
-private:
-	HttpServer *mServer;
-	Timer *mTimer;
-	TimerEvent *mTimerEvent;
-	Config *mConfig;
-	Semaphore mExitSem;
 
-	string getDestinationPath(RequestEvent *event);
+Config::Config() :
+				ChCppUtils::Config("/etc/ch-storage-server/ch-storage-server.json",
+						"./config/ch-storage-server.json") {
+	mPort = 0;
+	mRoot = "";
+	mPurgeIntervalSec = 60;
+	mPurgeTtlSec = 60;
+}
 
-	static void _onRequest(RequestEvent *event, void *this_);
-	void onRequest(RequestEvent *event);
+Config::~Config() {
+	LOG(INFO) << "*****************~Config";
+}
 
-	static void _onFilePurge (string name, string ext, string path, void *this_);
-	void onFilePurge (string name, string ext, string path);
+bool Config::populateConfigValues() {
+	LOG(INFO) << "<-----------------------Config";
+	mPort = mJson["server"]["port"];
+	LOG(INFO) << "server.port : " << mPort;
 
-	static void _onTimerEvent(TimerEvent *event, void *this_);
-	void onTimerEvent(TimerEvent *event);
+	mRoot = mJson["storage"]["root"];
+	LOG(INFO) << "storage.root: " << mRoot;
 
-	void registerPaths();
-public:
-	StorageServer(Config *config);
-	~StorageServer();
-	void start();
-	void stop();
-};
+	mPurgeTtlSec = mJson["purge"]["ttl-s"];
+	LOG(INFO) << "purge.ttl-s: " << mPurgeTtlSec;
+
+	mPurgeIntervalSec = mJson["purge"]["interval-s"];
+	LOG(INFO) << "purge.interval-s: " << mPurgeIntervalSec;
+
+	LOG(INFO) << "----------------------->Config";
+	return true;
+}
+
+void Config::init() {
+	ChCppUtils::Config::init();
+
+	populateConfigValues();
+}
+
+uint16_t Config::getPort() {
+	return mPort;
+}
+
+string &Config::getRoot() {
+	return mRoot;
+}
+
+uint32_t Config::getPurgeTtlSec() {
+	return mPurgeTtlSec;
+}
+
+uint32_t Config::getPurgeIntervalSec() {
+	return mPurgeIntervalSec;
+}
 
 } // End namespace SS.
-
-
-#endif /* SRC_STORAGE_SERVER_HPP_ */
