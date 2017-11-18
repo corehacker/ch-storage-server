@@ -48,8 +48,6 @@
 #include <cstdio>
 
 #include <glog/logging.h>
-#include <ch-cpp-utils/fts.hpp>
-#include <ch-cpp-utils/utils.hpp>
 #include "config.hpp"
 #include "storage-server.hpp"
 
@@ -88,6 +86,9 @@ StorageServer::StorageServer(Config *config) {
 	} else {
 		LOG(ERROR) << "Error root creating directory: " << mConfig->getRoot();
 	}
+
+	mFsWatch = new FsWatch(mConfig->getRoot());
+
 	mTimer = new Timer();
 	struct timeval tv = {0};
 	tv.tv_sec = mConfig->getPurgeIntervalSec();
@@ -161,19 +162,20 @@ void StorageServer::onRequest(RequestEvent *event) {
 	}
 }
 
-void StorageServer::_onFilePurge (string name, string ext, string path, void *this_) {
+void StorageServer::_onFilePurge (OnFileData &data, void *this_) {
 	StorageServer *server = (StorageServer *) this_;
-	server->onFilePurge(name, ext, path);
+	server->onFilePurge(data);
 }
 
-void StorageServer::onFilePurge (string name, string ext, string path) {
-	bool markForDelete = fileExpired(path, mConfig->getPurgeTtlSec());
+void StorageServer::onFilePurge (OnFileData &data) {
+	bool markForDelete = fileExpired(data.path, mConfig->getPurgeTtlSec());
+	LOG(ERROR) << "File: " << data.path << ", marked for Delete? " << markForDelete;
 	if(markForDelete) {
-		if(0 != std::remove(path.data())) {
-			LOG(ERROR) << "File: " << path << ", marked for Delete! failed to delete";
+		if(0 != std::remove(data.path.data())) {
+			LOG(ERROR) << "File: " << data.path << ", marked for Delete! failed to delete";
 			perror("remove");
 		} else {
-			LOG(INFO) << "File: " << path << ", marked for Delete! Deleted successfully";
+			LOG(INFO) << "File: " << data.path << ", marked for Delete! Deleted successfully";
 		}
 	}
 }
@@ -185,6 +187,7 @@ void StorageServer::_onTimerEvent(TimerEvent *event, void *this_) {
 
 void StorageServer::onTimerEvent(TimerEvent *event) {
 	FtsOptions options;
+	LOG(INFO) << "Timer fired!";
 	memset(&options, 0x00, sizeof(FtsOptions));
 	options.bIgnoreRegularFiles = false;
 	options.bIgnoreHiddenFiles = true;
@@ -200,6 +203,38 @@ void StorageServer::onTimerEvent(TimerEvent *event) {
 
 	mTimer->restart(event);
 }
+
+void StorageServer::_onNewFile(OnFileData &data, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onNewFile(data);
+}
+
+void StorageServer::onNewFile(OnFileData &data) {
+	LOG(INFO) << "New file: " << data.path;
+}
+
+
+void StorageServer::_onEmptyDir(OnFileData &data, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onEmptyDir(data);
+}
+
+void StorageServer::onEmptyDir(OnFileData &data) {
+
+	bool found = false;
+	for(auto stream : mConfig->mJson["streams"]) {
+		string haystack(mConfig->getRoot());
+		haystack += stream["path"];
+		if (haystack.find(data.path) != string::npos) {
+			found = true;
+		}
+	}
+	if(!found) {
+		LOG(INFO) << "Directory empty (will delete): " << data.path;
+		remove(data.path.data());
+	}
+}
+
 
 void StorageServer::registerPaths() {
 	auto streams = mConfig->mJson["streams"];
@@ -221,6 +256,12 @@ void StorageServer::registerPaths() {
 
 void StorageServer::start() {
 	LOG(INFO) << "Starting server";
+
+	mFsWatch->init();
+	mFsWatch->OnNewFileCbk(StorageServer::_onNewFile, this);
+	mFsWatch->OnEmptyDirCbk(StorageServer::_onEmptyDir, this);
+	mFsWatch->start();
+
 	registerPaths();
 //	mExitSem.wait();
 }

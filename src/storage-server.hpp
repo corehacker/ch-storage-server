@@ -44,6 +44,8 @@
 #include <ch-cpp-utils/http-server.hpp>
 #include <ch-cpp-utils/timer.hpp>
 #include <ch-cpp-utils/utils.hpp>
+#include <ch-cpp-utils/fts.hpp>
+#include <ch-cpp-utils/fs-watch.hpp>
 #include "config.hpp"
 
 #ifndef SRC_STORAGE_SERVER_HPP_
@@ -56,6 +58,8 @@ using ChCppUtils::Http::Server::RequestEvent;
 using ChCppUtils::Http::Server::HttpServer;
 using ChCppUtils::Timer;
 using ChCppUtils::TimerEvent;
+using ChCppUtils::FsWatch;
+using ChCppUtils::OnFileData;
 
 namespace SS {
 
@@ -66,17 +70,24 @@ private:
 	TimerEvent *mTimerEvent;
 	Config *mConfig;
 	Semaphore mExitSem;
+	FsWatch *mFsWatch;
 
 	string getDestinationPath(RequestEvent *event);
 
 	static void _onRequest(RequestEvent *event, void *this_);
 	void onRequest(RequestEvent *event);
 
-	static void _onFilePurge (string name, string ext, string path, void *this_);
-	void onFilePurge (string name, string ext, string path);
+	static void _onFilePurge(OnFileData &data, void *this_);
+	void onFilePurge(OnFileData &data);
 
 	static void _onTimerEvent(TimerEvent *event, void *this_);
 	void onTimerEvent(TimerEvent *event);
+
+	static void _onNewFile(OnFileData &data, void *this_);
+	void onNewFile(OnFileData &data);
+
+	static void _onEmptyDir(OnFileData &data, void *this_);
+	void onEmptyDir(OnFileData &data);
 
 	void registerPaths();
 public:

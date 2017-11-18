@@ -2,6 +2,7 @@
     "console": true,
     "daemon": false,
     "run-for": 600000,
+    "run-forever": false,
     "server": {
         "port": 8888
     },
