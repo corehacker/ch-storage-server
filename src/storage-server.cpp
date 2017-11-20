@@ -169,7 +169,6 @@ void StorageServer::_onFilePurge (OnFileData &data, void *this_) {
 
 void StorageServer::onFilePurge (OnFileData &data) {
 	bool markForDelete = fileExpired(data.path, mConfig->getPurgeTtlSec());
-	LOG(ERROR) << "File: " << data.path << ", marked for Delete? " << markForDelete;
 	if(markForDelete) {
 		if(0 != std::remove(data.path.data())) {
 			LOG(ERROR) << "File: " << data.path << ", marked for Delete! failed to delete";
