@@ -55,6 +55,8 @@ using namespace std::chrono;
 
 using ChCppUtils::Semaphore;
 using ChCppUtils::Http::Server::RequestEvent;
+using ChCppUtils::Http::Server::HttpHeaders;
+using ChCppUtils::Http::Server::HttpQuery;
 using ChCppUtils::Http::Server::HttpServer;
 using ChCppUtils::Timer;
 using ChCppUtils::TimerEvent;
@@ -72,7 +74,12 @@ private:
 	Semaphore mExitSem;
 	FsWatch *mFsWatch;
 
-	string getDestinationPath(RequestEvent *event);
+	string getDestinationDir(RequestEvent *event);
+	string getDestinationSegmentPath(RequestEvent *event);
+	string getDestinationManifestPath(RequestEvent *event);
+
+	bool saveManifest(RequestEvent *event);
+	bool saveSegment(RequestEvent *event);
 
 	static void _onRequest(RequestEvent *event, void *this_);
 	void onRequest(RequestEvent *event);

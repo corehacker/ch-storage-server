@@ -106,12 +106,10 @@ StorageServer::~StorageServer() {
 	delete mTimer;
 }
 
-string StorageServer::getDestinationPath(RequestEvent *event) {
+string StorageServer::getDestinationDir(RequestEvent *event) {
 	string destination = mConfig->getRoot();
-
 	string path = event->getPath();
 	string prefix = path.substr(0, path.find_last_of('/'));
-	string filename = path.substr(path.find_last_of('/') + 1);
 
 	destination += prefix + "/" + getDate();
 	if(mkPath(destination, 0744)) {
@@ -122,13 +120,97 @@ string StorageServer::getDestinationPath(RequestEvent *event) {
 
 	destination += "/" + getHour();
 	if(mkPath(destination, 0744)) {
-		LOG(INFO) << "Created hourly directory: " << destination;
+//		LOG(INFO) << "Created hourly directory: " << destination;
 	} else {
 		LOG(ERROR) << "Error creating hourly directory: " << destination;
 	}
+	return destination;
+}
 
+string StorageServer::getDestinationManifestPath(RequestEvent *event) {
+	string destination = getDestinationDir(event);
+	destination += "/index.m3u8";
+	return destination;
+}
+
+string StorageServer::getDestinationSegmentPath(RequestEvent *event) {
+	string destination = getDestinationDir(event);
+	string path = event->getPath();
+	string filename = path.substr(path.find_last_of('/') + 1);
 	destination += "/" + filename;
 	return destination;
+}
+
+bool StorageServer::saveManifest(RequestEvent *event) {
+	HttpQuery query = event->getQuery();
+	string extinf = "", targetduration = "";
+	auto search = query.find("extinf");
+	if(search != query.end()) {
+		extinf = search->second;
+	}
+
+	search = query.find("targetduration");
+	if(search != query.end()) {
+		targetduration = search->second;
+	}
+
+	bool status = false;
+	if(extinf.size() > 0 && targetduration.size() > 0) {
+		LOG(INFO) << "#EXTINF: " << search->second;
+		LOG(INFO) << "#EXT-X-TARGETDURATION: " << search->second;
+		string manifest = getDestinationManifestPath(event);
+
+		string path = event->getPath();
+		string filename = path.substr(path.find_last_of('/') + 1);
+		std::fstream myfile;
+		string body;
+		if(!fileExists(manifest)) {
+			LOG(INFO) << "Manifest: " << manifest << " does not exist. Will create";
+			myfile = std::fstream(manifest, std::ios::out | std::ios::binary);
+			body = "#EXTM3U\n"
+					"#EXT-X-VERSION:3\n"
+					"#EXT-X-MEDIA-SEQUENCE:1\n"
+					"#EXT-X-ALLOW-CACHE:NO\n"
+					"#EXT-X-TARGETDURATION:" + targetduration + "\n"
+					"#EXTINF:" + extinf + ",\n" +
+					filename + "\n";
+
+
+		} else {
+			LOG(INFO) << "Manifest: " << manifest << " exists. Will append";
+			myfile = std::fstream(manifest,
+					std::ios::out | std::ios::binary | std::ios::app);
+			body = "#EXTINF:" + extinf + ",\n" +
+					filename + "\n";
+		}
+		myfile.write(body.data(), body.size());
+		myfile.close();
+		status = true;
+	} else {
+		status = false;
+	}
+	return status;
+}
+
+bool StorageServer::saveSegment(RequestEvent *event) {
+	bool status = false;
+	void *body = event->getBody();
+	LOG(INFO) << "Body: " << event->getLength() << " bytes";
+	string destination = getDestinationSegmentPath(event);
+	if(!fileExists(destination)) {
+		LOG(INFO) << "File " << destination <<
+				" does not exist. Will create.";
+		auto myfile = std::fstream(destination,
+				std::ios::out | std::ios::binary);
+		myfile.write((char*)body, event->getLength());
+		myfile.close();
+		status = true;
+	} else {
+		LOG(WARNING) << "File " << destination << " exists.";
+		status = false;
+	}
+	free(body);
+	return status;
 }
 
 void StorageServer::_onRequest(RequestEvent *event, void *this_) {
@@ -138,24 +220,12 @@ void StorageServer::_onRequest(RequestEvent *event, void *this_) {
 
 void StorageServer::onRequest(RequestEvent *event) {
 	if(event->hasBody()) {
-		void *body = event->getBody();
-		LOG(INFO) << "Body: " << event->getLength() << " bytes";
-
-		string destination = getDestinationPath(event);
-
-		if(!fileExists(destination)) {
-			LOG(INFO) << "File " << destination <<
-					" does not exist. Will create.";
-			auto myfile = std::fstream(destination,
-					std::ios::out | std::ios::binary);
-			myfile.write((char*)body, event->getLength());
-			myfile.close();
+		if(saveSegment(event) && saveManifest(event)) {
 			send200OK(event->getRequest()->getRequest());
 		} else {
-			LOG(WARNING) << "File " << destination << " exists.";
+			LOG(WARNING) << "Saving failed:" << event->getPath();
 			send400BadRequest(event->getRequest()->getRequest());
 		}
-		free(body);
 	} else {
 		LOG(INFO) << "Empty body";
 		send400BadRequest(event->getRequest()->getRequest());
