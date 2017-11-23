@@ -81,7 +81,7 @@ string trim(const string& str)
 
 StorageServer::StorageServer(Config *config) {
 	mConfig = config;
-	if(mkPath(mConfig->getRoot(), 0744)) {
+	if(mkPath(mConfig->getRoot(), 0755)) {
 		LOG(INFO) << "Created root directory: " << mConfig->getRoot();
 	} else {
 		LOG(ERROR) << "Error root creating directory: " << mConfig->getRoot();
@@ -112,14 +112,14 @@ string StorageServer::getDestinationDir(RequestEvent *event) {
 	string prefix = path.substr(0, path.find_last_of('/'));
 
 	destination += prefix + "/" + getDate();
-	if(mkPath(destination, 0744)) {
+	if(mkPath(destination, 0755)) {
 //		LOG(INFO) << "Created date based directory: " << destination;
 	} else {
 		LOG(ERROR) << "Error creating date based directory: " << destination;
 	}
 
 	destination += "/" + getHour();
-	if(mkPath(destination, 0744)) {
+	if(mkPath(destination, 0755)) {
 //		LOG(INFO) << "Created hourly directory: " << destination;
 	} else {
 		LOG(ERROR) << "Error creating hourly directory: " << destination;
@@ -312,7 +312,7 @@ void StorageServer::registerPaths() {
 		string destination = mConfig->getRoot();
 		destination += stream["path"];
 		destination = trim(destination);
-		if(mkPath(destination, 0744)) {
+		if(mkPath(destination, 0755)) {
 			LOG(INFO) << "Created destination directory: " << destination;
 		} else {
 			LOG(ERROR) << "Error creating destination directory: " <<
