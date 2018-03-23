@@ -94,10 +94,25 @@ StorageServer::StorageServer(Config *config) {
 	tv.tv_sec = mConfig->getPurgeIntervalSec();
 	mTimerEvent = mTimer->create(&tv, StorageServer::_onTimerEvent, this);
 	mServer = new HttpServer(mConfig->getPort(), 2);
+
+	mMotionDetector = new MotionDetector(mConfig);
+	if(mConfig->getCameraEnable()) {
+		mMotionDetector->init();
+		mMotionDetector->start();
+	} else {
+		string filename = "";
+		if(mConfig->getMDStaticEnable()) {
+			filename = mConfig->getMDStaticFile();
+		}
+		mMotionDetector->process(filename);
+	}
 }
 
 StorageServer::~StorageServer() {
 	LOG(INFO) << "*****************~StorageServer";
+
+	delete mMotionDetector;
+
 	delete mServer;
 	LOG(INFO) << "Deleted server.";
 
@@ -213,6 +228,11 @@ bool StorageServer::saveSegment(RequestEvent *event) {
 	return status;
 }
 
+void StorageServer::detectMotion(RequestEvent *event) {
+	string filename = getDestinationSegmentPath(event);
+	mMotionDetector->process(filename);
+}
+
 void StorageServer::_onRequest(RequestEvent *event, void *this_) {
 	StorageServer *server = (StorageServer *) this_;
 	server->onRequest(event);
@@ -222,6 +242,8 @@ void StorageServer::onRequest(RequestEvent *event) {
 	if(event->hasBody()) {
 		if(saveSegment(event) && saveManifest(event)) {
 			send200OK(event->getRequest()->getRequest());
+
+			detectMotion(event);
 		} else {
 			LOG(WARNING) << "Saving failed:" << event->getPath();
 			send400BadRequest(event->getRequest()->getRequest());
@@ -256,7 +278,7 @@ void StorageServer::_onTimerEvent(TimerEvent *event, void *this_) {
 
 void StorageServer::onTimerEvent(TimerEvent *event) {
 	FtsOptions options;
-	LOG(INFO) << "Timer fired!";
+//	LOG(INFO) << "Timer fired!";
 	memset(&options, 0x00, sizeof(FtsOptions));
 	options.bIgnoreRegularFiles = false;
 	options.bIgnoreHiddenFiles = true;

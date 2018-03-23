@@ -60,3 +60,8 @@ configure
 src/Makefile.in
 src/ch-storage-server
 data/*
+
+*.ts
+*.nm
+src/config.txt
+src/va_project_main.cpp

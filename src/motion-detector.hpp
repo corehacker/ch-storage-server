@@ -2,7 +2,7 @@
  *
  *  BSD 2-Clause License
  *
- *  Copyright (c) 2017, Sandeep Prakash
+ *  Copyright (c) 2018, Sandeep Prakash
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -28,86 +28,95 @@
  ******************************************************************************/
 
 /*******************************************************************************
- * Copyright (c) 2017, Sandeep Prakash <123sandy@gmail.com>
+ * Copyright (c) 2018, Sandeep Prakash <123sandy@gmail.com>
  *
- * \file   storage-server.hpp
+ * \file   motion-detector.hpp
  *
  * \author Sandeep Prakash
  *
- * \date   Nov 02, 2017
+ * \date   Feb 26, 2018
  *
  * \brief
  *
  ******************************************************************************/
+#include <opencv2/opencv.hpp>
 
-#include <ch-cpp-utils/semaphore.hpp>
-#include <ch-cpp-utils/http-server.hpp>
-#include <ch-cpp-utils/timer.hpp>
-#include <ch-cpp-utils/utils.hpp>
-#include <ch-cpp-utils/fts.hpp>
-#include <ch-cpp-utils/fs-watch.hpp>
+#include <ch-cpp-utils/thread-pool.hpp>
+
 #include "config.hpp"
-#include "motion-detector.hpp"
+#include "mail-client.hpp"
 
-#ifndef SRC_STORAGE_SERVER_HPP_
-#define SRC_STORAGE_SERVER_HPP_
+using std::unordered_map;
+using std::make_pair;
 
-using namespace std::chrono;
+using ChCppUtils::ThreadPool;
+using ChCppUtils::ThreadJobBase;
+using ChCppUtils::ThreadJob;
 
-using ChCppUtils::Semaphore;
-using ChCppUtils::Http::Server::RequestEvent;
-using ChCppUtils::Http::Server::HttpHeaders;
-using ChCppUtils::Http::Server::HttpQuery;
-using ChCppUtils::Http::Server::HttpServer;
-using ChCppUtils::Timer;
-using ChCppUtils::TimerEvent;
-using ChCppUtils::FsWatch;
-using ChCppUtils::OnFileData;
+using namespace cv;
+
+#ifndef SRC_MOTION_DETECTOR_HPP_
+#define SRC_MOTION_DETECTOR_HPP_
 
 namespace SS {
 
-class StorageServer {
-private:
-	HttpServer *mServer;
-	Timer *mTimer;
-	TimerEvent *mTimerEvent;
-	Config *mConfig;
-	Semaphore mExitSem;
-	FsWatch *mFsWatch;
-	MotionDetector *mMotionDetector;
+class MotionDetector;
 
-	string getDestinationDir(RequestEvent *event);
-	string getDestinationSegmentPath(RequestEvent *event);
-	string getDestinationManifestPath(RequestEvent *event);
-
-	bool saveManifest(RequestEvent *event);
-	bool saveSegment(RequestEvent *event);
-	void detectMotion(RequestEvent *event);
-
-	static void _onRequest(RequestEvent *event, void *this_);
-	void onRequest(RequestEvent *event);
-
-	static void _onFilePurge(OnFileData &data, void *this_);
-	void onFilePurge(OnFileData &data);
-
-	static void _onTimerEvent(TimerEvent *event, void *this_);
-	void onTimerEvent(TimerEvent *event);
-
-	static void _onNewFile(OnFileData &data, void *this_);
-	void onNewFile(OnFileData &data);
-
-	static void _onEmptyDir(OnFileData &data, void *this_);
-	void onEmptyDir(OnFileData &data);
-
-	void registerPaths();
+class MotionDetectorJob {
 public:
-	StorageServer(Config *config);
-	~StorageServer();
+	string mFilename;
+	MotionDetector *mMD;
+	MotionDetectorJob (MotionDetector *md, string &filename);
+   ~MotionDetectorJob ();
+   void notify();
+};
+
+class MotionDetectorThread {
+private:
+	Config *mConfig;
+
+	uint32_t mMinArea;
+
+	Mat capturedImageRgbFrame;
+	Mat capturedImageGrayFrame;
+	Mat firstFrame;
+
+	bool detect(const string &filename);
+	void render(const String& winname, InputArray mat);
+
+public:
+	MotionDetectorThread(Config *config);
+	~MotionDetectorThread();
+	void processJob(MotionDetectorJob *data);
+	void detect(Mat &frame);
+};
+
+class MotionDetector {
+private:
+	Config *mConfig;
+
+	VideoCapture cameraCapture;
+
+	ThreadPool *mPool;
+	unordered_map<pthread_t, MotionDetectorThread *> mPoolCtxt;
+
+	MailClient *mMailClient;
+
+	void initiateCameraCapture();
+
+	static void *_routine(void *arg, struct event_base *base);
+	void *routine(MotionDetectorJob *data);
+
+public:
+	MotionDetector(Config *config);
+	~MotionDetector();
+	void init();
 	void start();
-	void stop();
+	void deinit();
+	void process(string &filename);
+	void notify(string &filename);
 };
 
 } // End namespace SS.
 
-
-#endif /* SRC_STORAGE_SERVER_HPP_ */
+#endif /* SRC_MOTION_DETECTOR_HPP_ */

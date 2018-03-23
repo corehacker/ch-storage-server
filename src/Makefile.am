@@ -2,5 +2,9 @@ AM_CPPFLAGS = -I..
 bin_PROGRAMS = ch-storage-server
 ch_storage_server_SOURCES =  \
 						main.cpp \
-						storage-server.cpp config.cpp
+						storage-server.cpp \
+						config.cpp \
+						motion-detector.cpp \
+						mail-client.cpp \
+						curl-smtp.cpp
 

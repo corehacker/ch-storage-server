@@ -56,6 +56,29 @@ Config::Config() :
 	mRoot = "";
 	mPurgeIntervalSec = 60;
 	mPurgeTtlSec = 60;
+
+	mCameraEnable = false;
+	mCameraDevice = 0;
+	mCameraFps = 5.0;
+	mCameraWidth = 640;
+	mCameraHeight = 480;
+
+	mMDMinArea = 500;
+	mMDThreadCount = 1;
+
+	mMDStaticEnable = false;
+	mMDStaticFile = "";
+
+	mMDRender = false;
+	mMDRenderDelay = 0;
+
+	mNotEnable = false;
+	mNotEmailEnable = false;
+	mNotEmailThreadCount = 0;
+	mNotEmailFrom = "";
+	mNotEmailSubject = "";
+	mNotEmailSmtpUrl = "";
+	mNotEmailAggregate = 0;
 }
 
 Config::~Config() {
@@ -75,6 +98,68 @@ bool Config::populateConfigValues() {
 
 	mPurgeIntervalSec = mJson["purge"]["interval-s"];
 	LOG(INFO) << "purge.interval-s: " << mPurgeIntervalSec;
+
+	mCameraEnable = mJson["camera"]["enable"];
+	LOG(INFO) << "camera.enable: " << mCameraEnable;
+
+	mCameraDevice = mJson["camera"]["device"];
+	LOG(INFO) << "camera.device: " << mCameraDevice;
+
+	mCameraFps    = mJson["camera"]["fps"];
+	LOG(INFO) << "camera.fps: " << mCameraFps;
+
+	mCameraWidth  = mJson["camera"]["width"];
+	LOG(INFO) << "camera.width: " << mCameraWidth;
+
+	mCameraHeight = mJson["camera"]["height"];
+	LOG(INFO) << "camera.height: " << mCameraHeight;
+
+	mMDMinArea = mJson["motion-detector"]["min-area"];
+	LOG(INFO) << "motion-detector.min-area: " << mMDMinArea;
+
+	mMDThreadCount = mJson["motion-detector"]["thread-count"];
+	LOG(INFO) << "motion-detector.thread-count: " << mMDThreadCount;
+
+	mMDStaticEnable = mJson["motion-detector"]["static"]["enable"];
+	LOG(INFO) << "motion-detector.static.enable: " << mMDStaticEnable;
+
+	mMDStaticFile = mJson["motion-detector"]["static"]["file"];
+	LOG(INFO) << "motion-detector.static.file: " << mMDStaticFile;
+
+	mMDRender = mJson["motion-detector"]["render"];
+	LOG(INFO) << "motion-detector.render: " << mMDRender;
+
+	mMDRenderDelay = mJson["motion-detector"]["render-delay"];
+	LOG(INFO) << "motion-detector.render-delay: " << mMDRenderDelay;
+
+	mNotEnable = mJson["notifications"]["enable"];
+	LOG(INFO) << "notifications.enable: " << mNotEnable;
+
+	mNotEmailEnable = mJson["notifications"]["email"]["enable"];
+	LOG(INFO) << "notifications.email.enable: " << mNotEmailEnable;
+
+	mNotEmailThreadCount = mJson["notifications"]["email"]["thread-count"];
+	LOG(INFO) << "notifications.email.thread-count: " << mNotEmailThreadCount;
+
+	mNotEmailFrom = mJson["notifications"]["email"]["from"];
+	LOG(INFO) << "notifications.email.from: " << mNotEmailFrom;
+
+	for(auto to : mJson["notifications"]["email"]["to"]) {
+		mNotEmailTo.push_back(to);
+	}
+
+	for(auto cc : mJson["notifications"]["email"]["cc"]) {
+		mNotEmailCc.push_back(cc);
+	}
+
+	mNotEmailSubject = mJson["notifications"]["email"]["subject"];
+	LOG(INFO) << "notifications.email.subject: " << mNotEmailSubject;
+
+	mNotEmailSmtpUrl = mJson["notifications"]["email"]["smtp"]["url"];
+	LOG(INFO) << "notifications.email.smtp.url: " << mNotEmailSmtpUrl;
+
+	mNotEmailAggregate = mJson["notifications"]["email"]["aggregate"];
+	LOG(INFO) << "notifications.email.aggregate: " << mNotEmailAggregate;
 
 	LOG(INFO) << "----------------------->Config";
 	return true;
@@ -101,5 +186,86 @@ uint32_t Config::getPurgeTtlSec() {
 uint32_t Config::getPurgeIntervalSec() {
 	return mPurgeIntervalSec;
 }
+
+bool Config::getCameraEnable() {
+	return mCameraEnable;
+}
+
+uint32_t Config::getCameraDevice() {
+	return mCameraDevice;
+}
+
+double_t Config::getCameraFps() {
+	return mCameraFps;
+}
+
+uint32_t Config::getCameraWidth() {
+	return mCameraWidth;
+}
+
+uint32_t Config::getCameraHeight() {
+	return mCameraHeight;
+}
+
+uint32_t Config::getMDThreadCount() {
+	return mMDThreadCount;
+}
+
+uint32_t Config::getMDMinArea() {
+	return mMDMinArea;
+}
+
+bool Config::getMDStaticEnable() {
+	return mMDStaticEnable;
+}
+
+string Config::getMDStaticFile() {
+	return mMDStaticFile;
+}
+
+bool Config::getMDRender() {
+	return mMDRender;
+}
+
+uint32_t Config::getMDRenderDelay() {
+	return mMDRenderDelay;
+}
+
+bool Config::getNotEnable() {
+	return mNotEnable;
+}
+
+bool Config::getNotEmailEnable() {
+	return mNotEmailEnable;
+}
+
+uint32_t Config::getNotEmailThreadCount() {
+	return mNotEmailThreadCount;
+}
+
+string Config::getNotEmailFrom() {
+	return mNotEmailFrom;
+}
+
+vector<string> Config::getNotEmailTo() {
+	return mNotEmailTo;
+}
+
+vector<string> Config::getNotEmailCc() {
+	return mNotEmailCc;
+}
+
+string Config::getNotEmailSubject() {
+	return mNotEmailSubject;
+}
+
+string Config::getNotEmailSmtpUrl() {
+	return mNotEmailSmtpUrl;
+}
+
+uint64_t Config::getNotEmailAggregate() {
+	return mNotEmailAggregate;
+}
+
 
 } // End namespace SS.

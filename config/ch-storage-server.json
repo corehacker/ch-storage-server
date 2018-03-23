@@ -22,5 +22,37 @@
     "purge": {
         "ttl-s": 60,
         "interval-s": 2
+    },
+    "camera": {
+        "enable": false,
+        "device": 0,
+        "fps": 25.0,
+        "width": 640,
+        "height": 480
+    },
+    "motion-detector": {
+        "thread-count": 2,
+        "min-area": 4000,
+        "static": {
+            "enable": false,
+            "file": ""
+        },
+        "render": true,
+        "render-delay": 100000
+    },
+    "notifications": {
+        "enable": true,
+        "email": {
+            "enable":true,
+            "thread-count": 2,
+            "from": "",
+            "to": [""],
+            "cc": [""],
+            "subject": "Notification | Motion Detection",
+            "smtp": {
+                "url": "smtp://127.0.0.1"
+            },
+            "aggregate": 20
+        }
     }
 }

@@ -63,6 +63,31 @@ public:
 	uint32_t getPurgeTtlSec();
 	uint32_t getPurgeIntervalSec();
 
+	bool	 getCameraEnable();
+	uint32_t getCameraDevice();
+	double_t getCameraFps();
+	uint32_t getCameraWidth();
+	uint32_t getCameraHeight();
+
+	uint32_t getMDThreadCount();
+	uint32_t getMDMinArea();
+
+	bool getMDStaticEnable();
+	string getMDStaticFile();
+
+	bool getMDRender();
+	uint32_t getMDRenderDelay();
+
+	bool getNotEnable();
+	bool getNotEmailEnable();
+	uint32_t getNotEmailThreadCount();
+	string getNotEmailFrom();
+	vector<string> getNotEmailTo();
+	vector<string> getNotEmailCc();
+	string getNotEmailSubject();
+	string getNotEmailSmtpUrl();
+	uint64_t getNotEmailAggregate();
+
 private:
 	uint16_t mPort;
 	string mRoot;
@@ -74,6 +99,31 @@ private:
 	string etcConfigPath;
 	string localConfigPath;
 	string selectedConfigPath;
+
+	bool	 mCameraEnable;
+	uint32_t mCameraDevice;
+	double_t mCameraFps;
+	uint32_t mCameraWidth;
+	uint32_t mCameraHeight;
+
+	uint32_t mMDThreadCount;
+	uint32_t mMDMinArea;
+
+	bool mMDStaticEnable;
+	string mMDStaticFile;
+
+	bool mMDRender;
+	uint32_t mMDRenderDelay;
+
+	bool mNotEnable;
+	bool mNotEmailEnable;
+	uint32_t mNotEmailThreadCount;
+	string mNotEmailFrom;
+	vector<string> mNotEmailTo;
+	vector<string> mNotEmailCc;
+	string mNotEmailSubject;
+	string mNotEmailSmtpUrl;
+	uint64_t mNotEmailAggregate;
 
 	bool populateConfigValues();
 };

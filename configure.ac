@@ -127,7 +127,54 @@ else
 fi
 AC_LANG_POP
 
+##########################################################################
+# check for opencv library
+##########################################################################
+dnl check opencv
+PKG_CHECK_MODULES([opencv], [opencv >= 3.3.0],
+          [AC_DEFINE([HAVE_OPENCV], [1], [Using OpenCV])]
+          [OPENCV_LIBS="-lopencv_core -lopencv_imgproc -lopencv_calib3d"],
+          [PKG_CHECK_MODULES([opencv], [opencv >= 2.0],
+          [AC_DEFINE([HAVE_OPENCV], [1], [Using OpenCV])]
+          [OPENCV_LIBS="-lopencv_core -lopencv_imgproc"],
+          AC_MSG_WARN([opencv not found. Not using some image processing.]))]
+          )
 
+AM_CONDITIONAL(HAVE_OPENCV, [test "x$OPENCV_LIBS" != "x"])
+LIBS="-lopencv_core -lopencv_videoio -lopencv_ccalib -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_bgsegm $LIBS"
+
+##########################################################################
+# check for ffmpeg libraries
+##########################################################################
+dnl checking several ffmpeg libraries
+PKG_CHECK_MODULES(FFMPEG, [libavformat libavutil >= 55.20 libavcodec libswscale libswresample],
+          [AC_DEFINE([HAVE_FFMPEG], [1], [film export supported])],
+          AC_MSG_WARN([ffmpeg libav libraries not found or too old. Not using film export formats.]))
+
+LIBS="-lavformat -lavcodec -lavutil -lswscale -lswresample $LIBS"
+
+
+##########################################################################
+# check for curl libraries
+##########################################################################
+
+AC_MSG_CHECKING([for libcurl cflags])
+CURLCFLAGS=`pkg-config libcurl --cflags || curl-config --cflags`
+AS_IF([ test "$?" -eq 0 ],,[AC_MSG_ERROR([libcurl was not found])] )
+AC_MSG_RESULT([$CURLCFLAGS])
+
+AC_MSG_CHECKING([for libcurl libs])
+CURLLIBS=`pkg-config libcurl --libs || curl-config --libs`
+AS_IF([ test "$?" -eq 0 ],,[AC_MSG_ERROR([libcurl was not found])] )
+AC_MSG_RESULT([$CURLLIBS])
+
+AC_MSG_CHECKING([for libcurl version >= $MIN_LIBCURL_VERSION])
+LIBCURL_VERSION=`pkg-config libcurl --modversion || curl-config --version`
+(pkg-config libcurl && pkg-config libcurl --atleast-version=${MIN_LIBCURL_VERSION}) || curl-config --checkfor ${MIN_LIBCURL_VERSION}
+AS_IF([ test "$?" -eq 0 ],,[AC_MSG_ERROR([${LIBCURL_VERSION} is too old])])
+AC_MSG_RESULT([${LIBCURL_VERSION}])
+
+LIBS="-lcurl $LIBS"
 
 ##########################################################################
 # check for ch-cpp-utils library
