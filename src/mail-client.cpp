@@ -64,7 +64,8 @@ MailClient::MailClient(Config *config) {
 }
 
 MailClient::~MailClient() {
-
+	LOG(INFO) << "*****************~MailClient";
+	delete mPool;
 }
 
 void *MailClient::_sendRoutine(void *arg, struct event_base *base) {
@@ -75,6 +76,7 @@ void *MailClient::_sendRoutine(void *arg, struct event_base *base) {
 void *MailClient::sendRoutine(MailJob *data) {
 	CurlSmtp curlSmtp(mConfig);
 	curlSmtp.send(data->mMessage);
+	delete data;
 	return NULL;
 }
 

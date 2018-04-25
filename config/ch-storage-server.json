@@ -38,7 +38,18 @@
             "file": ""
         },
         "render": true,
-        "render-delay": 100000
+        "render-delay": 100000,
+        "tensorflow": {
+           "enable": true,
+           "graph": "tensorflow/examples/ch-storage-server/config/tf_files/retrained_graph.pb",
+           "labels": "tensorflow/examples/ch-storage-server/config/tf_files/retrained_labels.txt",
+           "input-width": 299,
+           "input-height": 299,
+           "input-mean": 0,
+           "input-std": 255,
+           "input-layer": "Mul",
+           "output-layer": "final_result"
+        }
     },
     "notifications": {
         "enable": true,

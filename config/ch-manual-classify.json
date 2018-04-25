@@ -1,0 +1,22 @@
+{
+    "console": true,
+    "daemon": false,
+    "run-for": 600000,
+    "run-forever": false,
+    "server": {
+        "port": 8889
+    },
+    "storage": {
+        "root": "./manual-classify"
+    },
+    "streams": [
+        {
+            "name": "room-1",
+            "path": "/images/*"
+        }
+    ],
+    "purge": {
+        "ttl-s": 60,
+        "interval-s": 2
+    }
+}

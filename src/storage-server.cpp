@@ -47,9 +47,8 @@
 #include <chrono>
 #include <cstdio>
 
-#include <glog/logging.h>
-#include "config.hpp"
 #include "storage-server.hpp"
+#include <glog/logging.h>
 
 using std::ifstream;
 
@@ -103,8 +102,8 @@ StorageServer::StorageServer(Config *config) {
 		string filename = "";
 		if(mConfig->getMDStaticEnable()) {
 			filename = mConfig->getMDStaticFile();
+         mMotionDetector->process(filename);
 		}
-		mMotionDetector->process(filename);
 	}
 }
 
@@ -119,6 +118,8 @@ StorageServer::~StorageServer() {
 	mTimer->destroy(mTimerEvent);
 
 	delete mTimer;
+
+	delete mFsWatch;
 }
 
 string StorageServer::getDestinationDir(RequestEvent *event) {

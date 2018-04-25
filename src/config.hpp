@@ -78,6 +78,16 @@ public:
 	bool getMDRender();
 	uint32_t getMDRenderDelay();
 
+   bool getMDTfEnable();
+   string getMDTfGraph();
+   string getMDTfLabels();
+   uint32_t getMDTfInputWidth();
+   uint32_t getMDTfInputHeight();
+   uint32_t getMDTfInputMean();
+   uint32_t getMDTfInputStd();
+   string getMDTfInputLayer();
+   string getMDTfOutputLayer();
+
 	bool getNotEnable();
 	bool getNotEmailEnable();
 	uint32_t getNotEmailThreadCount();
@@ -114,6 +124,16 @@ private:
 
 	bool mMDRender;
 	uint32_t mMDRenderDelay;
+
+   bool mMDTfEnable;
+   string mMDTfGraph;
+   string mMDTfLabels;
+   uint32_t mMDTfInputWidth;
+   uint32_t mMDTfInputHeight;
+   uint32_t mMDTfInputMean;
+   uint32_t mMDTfInputStd;
+   string mMDTfInputLayer;
+   string mMDTfOutputLayer;
 
 	bool mNotEnable;
 	bool mNotEmailEnable;

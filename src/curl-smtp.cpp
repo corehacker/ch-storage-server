@@ -43,6 +43,10 @@
 
 #include "curl-smtp.hpp"
 
+#ifndef MIN
+#define MIN(a,b) ((a) <= (b) ? (a) : (b))
+#endif
+
 namespace SS {
 
 CurlSmtp::CurlSmtp(Config *config) {
@@ -53,6 +57,7 @@ CurlSmtp::CurlSmtp(Config *config) {
 }
 
 CurlSmtp::~CurlSmtp() {
+	LOG(INFO) << "*****************~CurlSmtp";
 	if (mCurl) {
 	    /* curl won't send the QUIT command until you call cleanup, so you should
 	     * be able to re-use this connection for additional messages (setting
@@ -127,7 +132,7 @@ size_t CurlSmtp::source(void *ptr, size_t size, size_t nmemb) {
 
 	size_t len = 0;
    if(0 != data.length()) {
-      len = data.length();
+      len = MIN(data.length(), (size * nmemb));
       memcpy(ptr, data.data(), len);
       LOG(INFO) << "Length: " << len << ", Body: " << data;
    }

@@ -39,17 +39,14 @@
  * \brief
  *
  ******************************************************************************/
-#include <glog/logging.h>
 
-extern "C" {
-#include <libavutil/timestamp.h>
-#include <libavformat/avformat.h>
-#include "libavcodec/avcodec.h"
-#include <libavutil/opt.h>
-#include <libswscale/swscale.h>
-}
+#include <sstream>
 
 #include "motion-detector.hpp"
+
+#include <glog/logging.h>
+
+using std::ostringstream;
 
 namespace SS {
 
@@ -70,46 +67,260 @@ void MotionDetectorJob::notify() {
 	mMD->notify(mFilename);
 }
 
-MotionDetectorThread::MotionDetectorThread(Config *config) {
-	mConfig = config;
+void FileProcessingCtxt::initBuffers() {
+	// openCV pixel format
+	AVPixelFormat pFormat = AV_PIX_FMT_BGR24;
+	// Data size
+	int numBytes = avpicture_get_size(pFormat, avctx->width, avctx->height);
+	// allocate buffer
+	buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+	// fill frame structure
+	avpicture_fill((AVPicture *) pFrameRGB, buffer, pFormat, avctx->width, avctx->height);
+}
 
+FileProcessingCtxt::FileProcessingCtxt(string &filename) {
+   LOG(INFO) << "FileProcessingCtxt | filename: " << filename;
+   this->filename = filename;
+   frameCount = 1;
+   nextFrameIndex = 1;
+   ifmt_ctx = nullptr;
+   video_stream_index = -1;
+	avctx = nullptr;
+	pFrame = av_frame_alloc();
+	pFrameRGB = av_frame_alloc();
+
+   initFfmpeg();
+   initBuffers();
+}
+
+FileProcessingCtxt::~FileProcessingCtxt() {
+	av_free(buffer);
+	av_free(pFrame);
+	av_free(pFrameRGB);
+
+   avformat_close_input(&ifmt_ctx);
+}
+
+bool FileProcessingCtxt::initFfmpeg() {
+	int ret;
+
+   const char *file = filename.data();
+
+   // Initialize FFMPEG
+   av_register_all();
+   // Get input file format context
+   if ((ret = avformat_open_input(&ifmt_ctx, file, nullptr, nullptr)) < 0)
+   {
+      LOG(ERROR) << "Could not open input file: " << filename;
+      return false;
+   }
+
+   // Extract streams description
+   if ((ret = avformat_find_stream_info(ifmt_ctx, nullptr)) < 0)
+   {
+      LOG(ERROR) << "Failed to retrieve input stream information";
+      return false;
+   }
+   // Print detailed information about the input or output format,
+   // such as duration, bitrate, streams, container, programs, metadata, side data, codec and time base.
+   av_dump_format(ifmt_ctx, 0, file, 0);
+
+	AVCodec *in_codec = nullptr;
+   for (unsigned int i = 0; i < ifmt_ctx->nb_streams; i++) {
+      if (ifmt_ctx->streams[i]->codec->coder_type == AVMEDIA_TYPE_VIDEO) {
+         video_stream_index = (int) i;
+         avctx = ifmt_ctx->streams[i]->codec;
+         in_codec = avcodec_find_decoder(avctx->codec_id);
+         if (!in_codec) {
+            LOG(ERROR) << "in codec not found";
+            exit(1);
+         }
+         LOG(INFO)<< "Codec found: " << in_codec->long_name;
+         break;
+      }
+   }
+
+	// Open input codec
+	avcodec_open2(avctx, in_codec, NULL);
+   return true;
+}
+
+void FileProcessingCtxt::processFrame(bool lastFrame) {
+	if(frameCount == nextFrameIndex || lastFrame) {
+		struct SwsContext *img_convert_ctx = sws_getCachedContext(NULL,
+				avctx->width,
+				avctx->height, avctx->pix_fmt, avctx->width,
+				avctx->height, AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
+
+		sws_scale(img_convert_ctx, pFrame->data, pFrame->linesize, 0,
+            avctx->height, pFrameRGB->data, pFrameRGB->linesize);
+
+		sws_freeContext(img_convert_ctx);
+
+		Mat frame(pFrame->height, pFrame->width, CV_8UC3,
+				pFrameRGB->data[0], pFrameRGB->linesize[0]);
+
+		 if(lastFrame) frameCount--;
+
+		LOG(INFO)<< "+++++Frame: " << frameCount;
+		 bool skip = nextFrame(frame, frameCount, lastFrame, pFrameRGB->linesize[0], this_);
+		 LOG(INFO)<< "-----Frame: " << frameCount;
+
+		 nextFrameIndex = skip ? nextFrameIndex * 2 : nextFrameIndex + 1;
+	}
+   frameCount++;
+}
+
+void FileProcessingCtxt::process(NextFrame nextFrame, void *this_) {
+   this->nextFrame = nextFrame;
+   this->this_ = this_;
+
+	int frameFinished = 0;
+	AVPacket pkt;
+
+	// Main loop
+	while (av_read_frame(ifmt_ctx, &pkt) >= 0) {
+		if (pkt.stream_index != video_stream_index) {
+         av_packet_unref(&pkt);
+         continue;
+      }
+
+      avcodec_decode_video2(avctx, pFrame, &frameFinished, &pkt);
+      if (frameFinished) {
+         processFrame();
+      }
+      // Decrease packet ref counter
+      av_packet_unref(&pkt);
+	}
+	processFrame(true);
+}
+
+UploadContext::UploadContext(MotionDetectorCtxt *ctxt, HttpRequest *request) {
+	this->context = ctxt;
+	this->request = request;
+	buffer = nullptr;
+	length=0;
+}
+
+UploadContext::~UploadContext() {
+
+}
+
+uint8_t* UploadContext::getBuffer() {
+   return buffer;
+}
+
+void UploadContext::setBuffer(uint8_t* buffer) {
+   this->buffer = buffer;
+}
+
+uint32_t UploadContext::getLength() {
+   return length;
+}
+
+void UploadContext::setLength(uint32_t length) {
+   this->length = length;
+}
+
+MotionDetectorCtxt* UploadContext::getContext() {
+   return context;
+}
+
+HttpRequest* UploadContext::getRequest() {
+   return request;
+}
+
+string& UploadContext::getUrl() {
+   return url;
+}
+
+void UploadContext::setUrl(string url) {
+   this->url = url;
+}
+
+void UploadContext::wait() {
+   LOG(INFO) << "Waiting for upload done: " << url;
+   mFinished.wait();
+   LOG(INFO) << "Upload done..." << url;
+}
+
+void UploadContext::done() {
+   mFinished.notify();
+   LOG(INFO) << "Notified upload done." << url;
+}
+
+MotionDetectorCtxt::MotionDetectorCtxt(Config *config, string &filename) {
+   this->mConfig = config;
+   this->filename = filename;
+   detected = false;
+
+	if(mConfig->getMDRender()) {
+		namedWindow(windowName, WINDOW_AUTOSIZE);
+		namedWindow(firstFrameWindow, WINDOW_AUTOSIZE);
+		namedWindow(thresholdFrameWindow, WINDOW_AUTOSIZE);
+		namedWindow(diffFrameWindow, WINDOW_AUTOSIZE);
+	}
+#ifdef ENABLE_TENSORFLOW
+	mLabelImage=nullptr;
+#endif
+
+   mFPCtxt = new FileProcessingCtxt(filename);
 	mMinArea = mConfig->getMDMinArea();
 }
 
-MotionDetectorThread::~MotionDetectorThread() {
-
+MotionDetectorCtxt::~MotionDetectorCtxt() {
+	LOG(INFO) << "*****************~MotionDetectorCtxt";
+	freeFinishedUploads();
+   delete mFPCtxt;
+	if(mConfig->getMDRender()) {
+		destroyAllWindows();
+	}
 }
 
-void MotionDetectorThread::render(const String& winname, InputArray mat) {
+#ifdef ENABLE_TENSORFLOW
+bool MotionDetectorCtxt::detectTf(Mat &frame) {
+   unordered_map<string,float> labels = mLabelImage->processFrame(frame);
+	auto motion = labels.find("motion");
+	auto nmotion = labels.find("nmotion");
+	LOG(INFO) << "motion: " << motion->second << ", nmotion: " << nmotion->second;
+	bool detected = false;
+	if(motion->second > nmotion->second) {
+		detected = true;
+	}
+   return detected;
+}
+#endif
+
+void MotionDetectorCtxt::render(const String& winname, InputArray mat) {
 	if(mConfig->getMDRender()) {
 		imshow(winname, mat);
 	}
 }
 
-bool MotionDetectorThread::detect(const string &filename) {
+bool MotionDetectorCtxt::detectCv(Mat &frame) {
 	Mat frameDelta;
 	Mat thres;
+	Mat capturedImageGrayFrame;
 	std::vector<std::vector<cv::Point> > contours;
 	Point offset;
 
-	cvtColor (capturedImageRgbFrame, capturedImageGrayFrame, CV_RGB2GRAY);
+	cvtColor (frame, capturedImageGrayFrame, CV_RGB2GRAY);
 
 	GaussianBlur(capturedImageGrayFrame, capturedImageGrayFrame, Size( 21, 21 ), 0, BORDER_DEFAULT);
 
-//		LOG(INFO) << "First fame size: " << firstFrame.total();
 	if(0 == firstFrame.total()) {
 		firstFrame = capturedImageGrayFrame.clone();
 		LOG(INFO) << "First fame size: " << firstFrame.total();
-		render(firstFrameWindow, capturedImageRgbFrame);
+		// render(firstFrameWindow, frame);
 		return false;
 	}
 
 	absdiff(firstFrame, capturedImageGrayFrame, frameDelta);
-	render(diffFrameWindow, frameDelta);
+	// render(diffFrameWindow, frameDelta);
 
 	threshold(frameDelta, thres, 25, 255, THRESH_BINARY);
 
-	render(thresholdFrameWindow, thres);
+	// render(thresholdFrameWindow, thres);
 
 	dilate(thres, thres, noArray(), Point(-1,-1), 2);
 	findContours(thres.clone(), contours, RETR_EXTERNAL,
@@ -125,159 +336,160 @@ bool MotionDetectorThread::detect(const string &filename) {
 		}
 		// LOG(INFO) << pthread_self() << " Motion Detected; Area: " << area;
 		Rect rect = boundingRect(contours[idx]);
-		rectangle(capturedImageRgbFrame, rect, Scalar(255, 255, 0), 2);
+		rectangle(frame, rect, Scalar(255, 255, 0), 2);
       detected = true;
 	}
 
-	render(windowName, capturedImageRgbFrame);
+	render(windowName, frame);
 	if(mConfig->getMDRender()) {
 		waitKey((int) (0 == mConfig->getMDRenderDelay() ? 1 : mConfig->getMDRenderDelay()));
 	}
-
    return detected;
 }
 
-void MotionDetectorThread::detect(Mat &frame) {
-	capturedImageRgbFrame = frame;
-   const string filename = "";
-	detect(filename);
+void MotionDetectorCtxt::freeFinishedUploads() {
+   lock_guard <mutex> lock (mFinishedUploadsMutex);
+
+   while(mFinishedUploads.size()) {
+      UploadContext *context = mFinishedUploads.front();
+      context->wait();
+      string url = context->getUrl();
+      HttpRequest *request = context->getRequest();
+      uint8_t *buffer = context->getBuffer();
+      LOG(INFO) << "Delayed freeing of upload context: " << url;
+      delete request;
+      delete context;
+      free(buffer);
+      mFinishedUploads.erase(mFinishedUploads.begin());
+   }
+}
+
+void MotionDetectorCtxt::_onLoad(HttpRequestLoadEvent *event, void *this_) {
+	UploadContext *context = (UploadContext *) this_;
+	MotionDetectorCtxt *md = context->getContext();
+	md->onLoad(event, context);
+}
+
+void MotionDetectorCtxt::onLoad(HttpRequestLoadEvent *event, UploadContext *context) {
+	HttpRequest *request = context->getRequest();
+	uint8_t *buffer = context->getBuffer();
+	string url = context->getUrl();
+	LOG(INFO) << "Request Complete. Adding context to finished list: " << url;
+	context->done();
+}
+
+void MotionDetectorCtxt::saveFrame(Mat &frame, string &filename, uint32_t index, bool lastFrame, uint32_t linesize) {
+   ostringstream os;
+
+   string file = filename.substr(filename.find_last_of("/") + 1);
+   LOG(INFO) << "File from path: " << file;
+
+   os << file << "." << index << ".jpg";
+   LOG(INFO) << "Saving frame " << index << " from file: " << os.str();
+
+   ostringstream os1;
+	os1 << "http://127.0.0.1:8889/images/" << os.str() << "?width="
+			<< frame.cols << "&height=" << frame.rows << "&linesize="
+			<< linesize;
+
+   /*
+    * curl -i -XPOST
+    * 	--data-binary @Tue-2018-04-03-08-40-06-PDT-1522770006018966474.ts.1.bin
+    * 	"http://127.0.0.1:8889/images/i.jpg?width=848&height=480&linesize=2544"
+    */
+   HttpRequest *request = new HttpRequest();
+
+   UploadContext *upload = new UploadContext(this, request);
+   size_t length = frame.cols * frame.rows * frame.channels() * frame.elemSize1();
+   void *buffer = malloc(length);
+   memmove(buffer, frame.data, length);
+   upload->setBuffer((uint8_t *) buffer);
+   upload->setLength(length);
+   upload->setUrl(os1.str());
+
+   request->onLoad(MotionDetectorCtxt::_onLoad).bind(upload);
+   request->open(EVHTTP_REQ_POST, upload->getUrl()).send(
+		   (void *) upload->getBuffer(), length);
+   mFinishedUploads.push_back(upload);
+}
+
+bool MotionDetectorCtxt::_nextFrame(Mat &frame, uint32_t index, bool lastFrame, uint32_t linesize, void *this_) {
+   MotionDetectorCtxt *ctxt = (MotionDetectorCtxt *) this_;
+   return ctxt->nextFrame(frame, index, lastFrame, linesize);
+}
+
+
+bool MotionDetectorCtxt::nextFrame(Mat &frame, uint32_t index, bool lastFrame, uint32_t linesize) {
+	detected = detectCv(frame);
+   if (detected) {
+      detectedFrames.push_back(frame);
+      if(detectedFrames.size() >= 2) {
+         detectedFrames.erase(detectedFrames.begin());
+      }
+   } else {
+      LOG(INFO) << "No Motion Detected by OpenCV.";
+   }
+
+   if(detectedFrames.size()) {
+      LOG(INFO) << "Detected by OpenCV. Running it through TF. Frames: " <<
+         detectedFrames.size();
+#ifdef ENABLE_TENSORFLOW
+    	detected = detectTf(detectedFrames.at(0));
+#endif
+      if(detected) {
+         saveFrame(frame, filename, index, lastFrame, linesize);
+      }
+   }
+
+	return true;
+}
+
+void MotionDetectorCtxt::process() {
+   mFPCtxt->process(MotionDetectorCtxt::_nextFrame, this);
+}
+
+bool MotionDetectorCtxt::motionDetected() {
+   return detected;
+}
+
+#ifdef ENABLE_TENSORFLOW
+void MotionDetectorCtxt::setLabelImage(LabelImage *labelImage) {
+	mLabelImage = labelImage;
+}
+#endif
+
+MotionDetectorThread::MotionDetectorThread(Config *config) {
+	mConfig = config;
+
+#ifdef ENABLE_TENSORFLOW
+   mLabelImage = new LabelImage(config);
+   mLabelImage->init();
+#endif
+}
+
+MotionDetectorThread::~MotionDetectorThread() {
+	LOG(INFO) << "*****************~MotionDetectorThread";
+#ifdef ENABLE_TENSORFLOW
+	delete mLabelImage;
+#endif
 }
 
 void MotionDetectorThread::processJob(MotionDetectorJob *data) {
-	AVFormatContext *ifmt_ctx = NULL;
-	AVPacket pkt;
-	AVFrame *pFrame = NULL;
-	AVFrame *pFrameRGB = NULL;
-	int frameFinished = 0;
-	pFrame = av_frame_alloc();
-	pFrameRGB = av_frame_alloc();
+   MotionDetectorCtxt *mdCtxt = new MotionDetectorCtxt(mConfig,
+         data->mFilename);
+#ifdef ENABLE_TENSORFLOW
+	mdCtxt->setLabelImage(mLabelImage);
+#endif
 
-	const string filename = data->mFilename;
-
-	const char *in_filename;
-	if(filename.length() > 0) {
-		in_filename = filename.data();
-	} else {
-		return;
-	}
-
-	int ret;
-
-	// Initialize FFMPEG
-	av_register_all();
-	// Get input file format context
-	if ((ret = avformat_open_input(&ifmt_ctx, in_filename, 0, 0)) < 0)
-	{
-		fprintf(stderr, "Could not open input file '%s'", in_filename);
-		return;
-	}
-	// Extract streams description
-	if ((ret = avformat_find_stream_info(ifmt_ctx, 0)) < 0)
-	{
-		fprintf(stderr, "Failed to retrieve input stream information");
-		return;
-	}
-	// Print detailed information about the input or output format,
-	// such as duration, bitrate, streams, container, programs, metadata, side data, codec and time base.
-	av_dump_format(ifmt_ctx, 0, in_filename, 0);
-
-	LOG(INFO) << "Processing input file: " << in_filename;
-
-	// Search for input video codec info
-	AVCodec *in_codec = nullptr;
-	AVCodecContext* avctx = nullptr;
-
-	int video_stream_index = -1;
-	for (unsigned int i = 0; i < ifmt_ctx->nb_streams; i++) {
-		if (ifmt_ctx->streams[i]->codec->coder_type == AVMEDIA_TYPE_VIDEO) {
-			video_stream_index = (int) i;
-			avctx = ifmt_ctx->streams[i]->codec;
-			in_codec = avcodec_find_decoder(avctx->codec_id);
-			if (!in_codec) {
-				fprintf(stderr, "in codec not found\n");
-				exit(1);
-			}
-			LOG(INFO)<< "Codec found: " << in_codec->long_name;
-			break;
-		}
-	}
-
-	// openCV pixel format
-	AVPixelFormat pFormat = AV_PIX_FMT_RGB24;
-	// Data size
-	int numBytes = avpicture_get_size(pFormat, avctx->width, avctx->height);
-	// allocate buffer
-	uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-	// fill frame structure
-	avpicture_fill((AVPicture *)pFrameRGB, buffer, pFormat, avctx->width, avctx->height);
-	// Open input codec
-	avcodec_open2(avctx, in_codec, NULL);
-
-	if(mConfig->getMDRender()) {
-		namedWindow(windowName, WINDOW_AUTOSIZE);
-		namedWindow(firstFrameWindow, WINDOW_AUTOSIZE);
-		namedWindow(thresholdFrameWindow, WINDOW_AUTOSIZE);
-		namedWindow(diffFrameWindow, WINDOW_AUTOSIZE);
-	}
-   bool detected = false;
-   uint32_t frame = 0;
-	// Main loop
-	while (1) {
-		AVStream *in_stream;
-		ret = av_read_frame(ifmt_ctx, &pkt);
-		if (ret < 0) {
-			break;
-		}
-		in_stream = ifmt_ctx->streams[pkt.stream_index];
-
-		if (pkt.stream_index == video_stream_index) {
-			avcodec_decode_video2(avctx, pFrame, &frameFinished, &pkt);
-			if (frameFinished) {
-				struct SwsContext *img_convert_ctx;
-				img_convert_ctx = sws_getCachedContext(NULL, avctx->width,
-						avctx->height, avctx->pix_fmt, avctx->width,
-						avctx->height, AV_PIX_FMT_BGR24,
-						SWS_BICUBIC,
-						NULL,
-						NULL,
-						NULL);
-				sws_scale(img_convert_ctx, ((AVPicture*) pFrame)->data,
-						((AVPicture*) pFrame)->linesize, 0, avctx->height,
-						((AVPicture *) pFrameRGB)->data,
-						((AVPicture *) pFrameRGB)->linesize);
-
-				sws_freeContext(img_convert_ctx);
-				Mat img(pFrame->height, pFrame->width, CV_8UC3,
-						pFrameRGB->data[0], false);
-				capturedImageRgbFrame = img;
-
-				// LOG(INFO)<< "+++++Frame: " << frame;
-				bool motion = detect(filename);
-				if (motion) {
-					detected = true;
-				}
-				// LOG(INFO)<< "-----Frame: " << frame;
-				frame++;
-			}
-		}
-		// Decrease packet ref counter
-		av_packet_unref(&pkt);
-	}
-	if(mConfig->getMDRender()) {
-		destroyAllWindows();
-	}
-
+   mdCtxt->process();
+   bool detected = mdCtxt->motionDetected();
    if(detected) {
-		LOG(INFO) << pthread_self() << " Motion Detected: " << filename;
+		LOG(INFO) << pthread_self() << " Motion Detected: " << data->mFilename;
       data->notify();
    } else {
-		LOG(INFO) << pthread_self() << " No Motion Detected: " << filename;
+		LOG(INFO) << pthread_self() << " No Motion Detected: " << data->mFilename;
    }
-
-	avformat_close_input(&ifmt_ctx);
-//	avcodec_close(avctx);
-	av_free(pFrame);
-	av_free(pFrameRGB);
+   delete mdCtxt;
 }
 
 MotionDetector::MotionDetector(Config *config) {
@@ -290,7 +502,12 @@ MotionDetector::MotionDetector(Config *config) {
 MotionDetector::~MotionDetector() {
 	LOG(INFO) << "*****************~MotionDetector";
 	LOG(INFO) << "*****************~MotionDetector deleting pool";
+	for(auto &entry : mPoolCtxt) {
+		MotionDetectorThread *ctxt = entry.second;
+		delete ctxt;
+	}
 	delete mPool;
+	delete mMailClient;
 }
 
 void MotionDetector::init() {
@@ -309,7 +526,7 @@ void MotionDetector::start() {
 	Mat frame;
 	while (true) {
 		cameraCapture >> frame;
-		ctxt->detect(frame);
+		// ctxt->detect(frame);
 	}
 }
 
@@ -344,6 +561,8 @@ void *MotionDetector::routine(MotionDetectorJob *data) {
 	}
 
 	ctxt->processJob(data);
+
+	delete data;
 	return NULL;
 }
 
@@ -360,8 +579,6 @@ void MotionDetector::notify(string &filename) {
 
 void MotionDetector::initiateCameraCapture()
 {
-	int i_ret_val = -1;
-
 	bool bStatus = false;
 
 	/**************************************************************************
@@ -374,7 +591,6 @@ void MotionDetector::initiateCameraCapture()
 	if(false == cameraCapture.isOpened())
 	{
 		LOG(ERROR) << "Camera Device Open Failed!";
-		i_ret_val = -1;
         goto CLEAN_RETURN;
 	}
 
@@ -384,7 +600,6 @@ void MotionDetector::initiateCameraCapture()
 	bStatus = cameraCapture.set(CV_CAP_PROP_FPS, mConfig->getCameraFps());
 	if (false == bStatus)
 	{
-		i_ret_val = -1;
 		goto CLEAN_RETURN;
 	}
 
@@ -392,20 +607,14 @@ void MotionDetector::initiateCameraCapture()
 			mConfig->getCameraWidth());
 	if (false == bStatus)
 	{
-		i_ret_val = -1;
 		goto CLEAN_RETURN;
 	}
 
     bStatus = cameraCapture.set (CV_CAP_PROP_FRAME_HEIGHT,
 		mConfig->getCameraHeight());
-	if (false == bStatus)
-	{
-		i_ret_val = -1;
-	}
-	else
+	if (bStatus)
 	{
 		LOG(INFO) << "Camera Device Initialized!";
-		i_ret_val = 0;
 	}
 CLEAN_RETURN:
 	return;

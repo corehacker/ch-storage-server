@@ -65,3 +65,6 @@ data/*
 *.nm
 src/config.txt
 src/va_project_main.cpp
+.vscode
+
+manual-classify/ch-manual-image-classify

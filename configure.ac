@@ -141,7 +141,7 @@ PKG_CHECK_MODULES([opencv], [opencv >= 3.3.0],
           )
 
 AM_CONDITIONAL(HAVE_OPENCV, [test "x$OPENCV_LIBS" != "x"])
-LIBS="-lopencv_core -lopencv_videoio -lopencv_ccalib -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_bgsegm $LIBS"
+LIBS="-lopencv_core -lopencv_imgcodecs -lopencv_videoio -lopencv_ccalib -lopencv_highgui -lopencv_imgproc -lopencv_video -lopencv_bgsegm $LIBS"
 
 ##########################################################################
 # check for ffmpeg libraries
@@ -202,5 +202,6 @@ AC_LANG_POP
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES(Makefile \
-                src/Makefile)
+                src/Makefile \
+                manual-classify/Makefile)
 AC_OUTPUT

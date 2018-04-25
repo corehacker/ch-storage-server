@@ -72,6 +72,16 @@ Config::Config() :
 	mMDRender = false;
 	mMDRenderDelay = 0;
 
+   mMDTfEnable = false;
+   mMDTfGraph = "";
+   mMDTfLabels = "";
+   mMDTfInputWidth = 0;
+   mMDTfInputHeight = 0;
+   mMDTfInputMean = 0;
+   mMDTfInputStd = 0;
+   mMDTfInputLayer = "";
+   mMDTfOutputLayer = "";
+
 	mNotEnable = false;
 	mNotEmailEnable = false;
 	mNotEmailThreadCount = 0;
@@ -131,6 +141,33 @@ bool Config::populateConfigValues() {
 
 	mMDRenderDelay = mJson["motion-detector"]["render-delay"];
 	LOG(INFO) << "motion-detector.render-delay: " << mMDRenderDelay;
+
+   mMDTfEnable = mJson["motion-detector"]["tensorflow"]["enable"];
+	LOG(INFO) << "motion-detector.tensorflow.enable: " << mMDTfEnable;
+
+   mMDTfGraph = mJson["motion-detector"]["tensorflow"]["graph"];
+	LOG(INFO) << "motion-detector.tensorflow.graph: " << mMDTfGraph;
+
+   mMDTfLabels = mJson["motion-detector"]["tensorflow"]["labels"];
+	LOG(INFO) << "motion-detector.tensorflow.labels: " << mMDTfLabels;
+
+   mMDTfInputWidth = mJson["motion-detector"]["tensorflow"]["input-width"];
+	LOG(INFO) << "motion-detector.tensorflow.input-width: " << mMDTfInputWidth;
+
+   mMDTfInputHeight = mJson["motion-detector"]["tensorflow"]["input-height"];
+	LOG(INFO) << "motion-detector.tensorflow.input-height: " << mMDTfInputHeight;
+
+   mMDTfInputMean = mJson["motion-detector"]["tensorflow"]["input-mean"];
+	LOG(INFO) << "motion-detector.tensorflow.input-mean: " << mMDTfInputMean;
+
+   mMDTfInputStd = mJson["motion-detector"]["tensorflow"]["input-std"];
+	LOG(INFO) << "motion-detector.tensorflow.input-std: " << mMDTfInputStd;
+
+   mMDTfInputLayer = mJson["motion-detector"]["tensorflow"]["input-layer"];
+	LOG(INFO) << "motion-detector.tensorflow.input-layer: " << mMDTfInputLayer;
+
+   mMDTfOutputLayer = mJson["motion-detector"]["tensorflow"]["output-layer"];
+	LOG(INFO) << "motion-detector.tensorflow.output-layer: " << mMDTfOutputLayer;
 
 	mNotEnable = mJson["notifications"]["enable"];
 	LOG(INFO) << "notifications.enable: " << mNotEnable;
@@ -229,6 +266,42 @@ bool Config::getMDRender() {
 
 uint32_t Config::getMDRenderDelay() {
 	return mMDRenderDelay;
+}
+
+bool Config::getMDTfEnable() {
+   return mMDTfEnable;
+}
+
+string Config::getMDTfGraph() {
+   return mMDTfGraph;
+}
+
+string Config::getMDTfLabels() {
+   return mMDTfLabels;
+}
+
+uint32_t Config::getMDTfInputWidth() {
+   return mMDTfInputWidth;
+}
+
+uint32_t Config::getMDTfInputHeight() {
+   return mMDTfInputHeight;
+}
+
+uint32_t Config::getMDTfInputMean() {
+   return mMDTfInputMean;
+}
+
+uint32_t Config::getMDTfInputStd() {
+   return mMDTfInputStd;
+}
+
+string Config::getMDTfInputLayer() {
+   return mMDTfInputLayer;
+}
+
+string Config::getMDTfOutputLayer() {
+   return mMDTfOutputLayer;
 }
 
 bool Config::getNotEnable() {
