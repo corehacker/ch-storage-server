@@ -89,6 +89,11 @@ Config::Config() :
 	mNotEmailSubject = "";
 	mNotEmailSmtpUrl = "";
 	mNotEmailAggregate = 0;
+
+	mNotKafkaEnable = false;
+	mNotKafkaConnection = "";
+	mNotKafkaTopic = "";
+	mNotKafkaPartition = 0;
 }
 
 Config::~Config() {
@@ -197,6 +202,19 @@ bool Config::populateConfigValues() {
 
 	mNotEmailAggregate = mJson["notifications"]["email"]["aggregate"];
 	LOG(INFO) << "notifications.email.aggregate: " << mNotEmailAggregate;
+
+
+	mNotKafkaEnable = mJson["notifications"]["kafka"]["enable"];
+	LOG(INFO) << "notifications.kafka.enable: " << mNotKafkaEnable;
+
+	mNotKafkaConnection = mJson["notifications"]["kafka"]["connection"];
+	LOG(INFO) << "notifications.kafka.connection: " << mNotKafkaConnection;
+
+	mNotKafkaTopic = mJson["notifications"]["kafka"]["topic"];
+	LOG(INFO) << "notifications.kafka.topic: " << mNotKafkaTopic;
+
+	mNotKafkaPartition = mJson["notifications"]["kafka"]["partition"];
+	LOG(INFO) << "notifications.kafka.partition: " << mNotKafkaPartition;
 
 	LOG(INFO) << "----------------------->Config";
 	return true;
@@ -338,6 +356,22 @@ string Config::getNotEmailSmtpUrl() {
 
 uint64_t Config::getNotEmailAggregate() {
 	return mNotEmailAggregate;
+}
+
+bool Config::getNotKafkaEnable() {
+	return mNotKafkaEnable;
+}
+
+string Config::getNotKafkaConnection() {
+	return mNotKafkaConnection;
+}
+
+string Config::getNotKafkaTopic() {
+	return mNotKafkaTopic;
+}
+
+uint32_t Config::getNotKafkaPartition() {
+	return mNotKafkaPartition;
 }
 
 

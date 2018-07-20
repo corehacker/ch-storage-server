@@ -46,15 +46,16 @@
 #include <sys/types.h>
 #include <chrono>
 #include <cstdio>
+#include <dirent.h>
 
 #include "storage-server.hpp"
+
 #include <glog/logging.h>
 
 using std::ifstream;
 
 using ChCppUtils::FtsOptions;
 using ChCppUtils::Fts;
-
 using ChCppUtils::mkPath;
 using ChCppUtils::directoryListing;
 using ChCppUtils::fileExpired;
@@ -66,6 +67,27 @@ using ChCppUtils::getHour;
 using ChCppUtils::getDate;
 
 namespace SS {
+
+static int get_num_fds(void);
+
+static int get_num_fds()
+{
+     int fd_count;
+     char buf[64];
+     struct dirent *dp;
+		 DIR *dir = NULL;
+
+     snprintf(buf, 64, "/proc/%i/fd/", getpid());
+
+     fd_count = 0;
+     
+		 dir = opendir(buf);
+     while ((dp = readdir(dir)) != NULL) {
+          fd_count++;
+     }
+     closedir(dir);
+     return fd_count;
+}
 
 string trim(const string& str)
 {
@@ -94,7 +116,10 @@ StorageServer::StorageServer(Config *config) {
 	mTimerEvent = mTimer->create(&tv, StorageServer::_onTimerEvent, this);
 	mServer = new HttpServer(mConfig->getPort(), 2);
 
-	mMotionDetector = new MotionDetector(mConfig);
+	mKafkaClient = new KafkaClient(mConfig);
+	mKafkaClient->init();
+
+	mMotionDetector = new MotionDetector(mConfig, mKafkaClient);
 	if(mConfig->getCameraEnable()) {
 		mMotionDetector->init();
 		mMotionDetector->start();
@@ -105,10 +130,13 @@ StorageServer::StorageServer(Config *config) {
          mMotionDetector->process(filename);
 		}
 	}
+	procStat = new ProcStat();
 }
 
 StorageServer::~StorageServer() {
 	LOG(INFO) << "*****************~StorageServer";
+
+	delete procStat;
 
 	delete mMotionDetector;
 
@@ -255,6 +283,19 @@ void StorageServer::onRequest(RequestEvent *event) {
 	}
 }
 
+void StorageServer::_onDummyRequest(RequestEvent *event, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onDummyRequest(event);
+}
+
+void StorageServer::onDummyRequest(RequestEvent *event) {
+	LOG(INFO) << "Dummy Request";
+	json j;
+	j["filename"] = "/dummy.ts";
+	mKafkaClient->send(j);
+	send200OK(event->getRequest()->getRequest());
+}
+
 void StorageServer::_onFilePurge (OnFileData &data, void *this_) {
 	StorageServer *server = (StorageServer *) this_;
 	server->onFilePurge(data);
@@ -278,8 +319,20 @@ void StorageServer::_onTimerEvent(TimerEvent *event, void *this_) {
 }
 
 void StorageServer::onTimerEvent(TimerEvent *event) {
+	uint32_t rss = procStat->getRSS();
+	LOG(INFO) << "RSS: " << rss / 1024 << " KB, Max RSS Configured: " << 
+		(mConfig->getMaxRss() / 1024) << " KB";
+
+	if(rss > mConfig->getMaxRss()) {
+		LOG(ERROR) << "*********FATAL**********";
+		LOG(ERROR) << "Too much memory in use. Exiting process.";
+		LOG(FATAL) << "*********FATAL**********";
+		exit(1);
+	}
+	
 	FtsOptions options;
 //	LOG(INFO) << "Timer fired!";
+	LOG(INFO) << "Number of open fd(s): " << get_num_fds();
 	memset(&options, 0x00, sizeof(FtsOptions));
 	options.bIgnoreRegularFiles = false;
 	options.bIgnoreHiddenFiles = true;
@@ -344,6 +397,7 @@ void StorageServer::registerPaths() {
 		mServer->route(EVHTTP_REQ_POST, stream["path"],
 				StorageServer::_onRequest, this);
 	}
+	mServer->route(EVHTTP_REQ_POST, "/dummy/motion", StorageServer::_onDummyRequest, this);
 }
 
 void StorageServer::start() {

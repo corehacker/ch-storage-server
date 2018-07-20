@@ -41,12 +41,14 @@
  ******************************************************************************/
 
 #include <sstream>
+#include <ch-cpp-utils/third-party/json/json.hpp>
 
 #include "motion-detector.hpp"
 
 #include <glog/logging.h>
 
 using std::ostringstream;
+using nlohmann::json;
 
 namespace SS {
 
@@ -371,8 +373,6 @@ void MotionDetectorCtxt::_onLoad(HttpRequestLoadEvent *event, void *this_) {
 }
 
 void MotionDetectorCtxt::onLoad(HttpRequestLoadEvent *event, UploadContext *context) {
-	HttpRequest *request = context->getRequest();
-	uint8_t *buffer = context->getBuffer();
 	string url = context->getUrl();
 	LOG(INFO) << "Request Complete. Adding context to finished list: " << url;
 	context->done();
@@ -493,8 +493,20 @@ void MotionDetectorThread::processJob(MotionDetectorJob *data) {
 }
 
 MotionDetector::MotionDetector(Config *config) {
+	LOG(INFO) << "*****************MotionDetector";
 	mConfig = config;
 	mMailClient = new MailClient(config);
+	mKafkaClient = new KafkaClient(config);
+	mKafkaClient->init();
+	mPool = new ThreadPool(mConfig->getMDThreadCount(), false);
+	LOG(INFO) << "Motion detector thread pool ready to process!";
+}
+
+MotionDetector::MotionDetector(Config *config, KafkaClient *kafkaClient) {
+	LOG(INFO) << "*****************MotionDetector";
+	mConfig = config;
+	mMailClient = new MailClient(config);
+	mKafkaClient = kafkaClient;
 	mPool = new ThreadPool(mConfig->getMDThreadCount(), false);
 	LOG(INFO) << "Motion detector thread pool ready to process!";
 }
@@ -507,6 +519,7 @@ MotionDetector::~MotionDetector() {
 		delete ctxt;
 	}
 	delete mPool;
+	delete mKafkaClient;
 	delete mMailClient;
 }
 
@@ -521,7 +534,7 @@ void MotionDetector::start() {
 	std::vector<std::vector<cv::Point> > contours;
 	Point offset;
 
-	MotionDetectorThread *ctxt = new MotionDetectorThread(mConfig);
+	// MotionDetectorThread *ctxt = new MotionDetectorThread(mConfig);
 
 	Mat frame;
 	while (true) {
@@ -575,6 +588,10 @@ void MotionDetector::process(string &filename) {
 
 void MotionDetector::notify(string &filename) {
 	mMailClient->notifyMotionDetection(filename);
+
+	json j;
+	j["filename"] = filename;
+	mKafkaClient->send(j);
 }
 
 void MotionDetector::initiateCameraCapture()

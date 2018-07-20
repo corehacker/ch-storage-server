@@ -64,6 +64,11 @@ void signal_handler(int signal) {
 	deinitEnv();
 }
 
+static void eventFatalCallback(int err) {
+   LOG(FATAL) << "[libevent] ****FATAL ERROR**** (" << err << ")";
+   exit(err);
+}
+
 static void initEnv() {
 	config = new Config();
 	config->init();
@@ -75,6 +80,9 @@ static void initEnv() {
 		LOG(INFO) << "Not LOGGING to console.";
 		google::InitGoogleLogging("ch-storage-server");
 	}
+
+	google::InstallFailureSignalHandler();
+	event_set_fatal_callback(eventFatalCallback);
 
 	if(config->isDaemon()) {
 		daemonizeProcess();

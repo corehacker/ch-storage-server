@@ -46,6 +46,7 @@
 #include <ch-cpp-utils/utils.hpp>
 #include <ch-cpp-utils/fts.hpp>
 #include <ch-cpp-utils/fs-watch.hpp>
+#include <ch-cpp-utils/proc-stat.hpp>
 #include "config.hpp"
 #include "motion-detector.hpp"
 
@@ -63,6 +64,7 @@ using ChCppUtils::Timer;
 using ChCppUtils::TimerEvent;
 using ChCppUtils::FsWatch;
 using ChCppUtils::OnFileData;
+using ChCppUtils::ProcStat;
 
 namespace SS {
 
@@ -75,6 +77,8 @@ private:
 	Semaphore mExitSem;
 	FsWatch *mFsWatch;
 	MotionDetector *mMotionDetector;
+	KafkaClient *mKafkaClient;
+	ProcStat *procStat;
 
 	string getDestinationDir(RequestEvent *event);
 	string getDestinationSegmentPath(RequestEvent *event);
@@ -86,6 +90,9 @@ private:
 
 	static void _onRequest(RequestEvent *event, void *this_);
 	void onRequest(RequestEvent *event);
+
+	static void _onDummyRequest(RequestEvent *event, void *this_);
+	void onDummyRequest(RequestEvent *event);
 
 	static void _onFilePurge(OnFileData &data, void *this_);
 	void onFilePurge(OnFileData &data);

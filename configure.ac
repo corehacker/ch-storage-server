@@ -177,6 +177,28 @@ AC_MSG_RESULT([${LIBCURL_VERSION}])
 LIBS="-lcurl $LIBS"
 
 ##########################################################################
+# check for librdkafka library
+##########################################################################
+#dnl add the external library to the list of libraries which will be used for our test program
+LIBS="-lrdkafka++ $LIBS"
+
+AC_LANG_PUSH([C++])
+#dnl check for the presence of 'libtotest'
+AC_MSG_CHECKING([for the rdkafka++ availability])
+AC_LINK_IFELSE([
+                AC_LANG_PROGRAM([#include <librdkafka/rdkafkacpp.h>],
+                                [RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL)])
+                ],
+                [LIBCH_LIB_RD_KAFKA_PRESENCE=1], [LIBCH_LIB_RD_KAFKA_PRESENCE=0])
+
+if test "$LIBCH_LIB_RD_KAFKA_PRESENCE" = "1"; then
+    AC_MSG_RESULT([found])
+else
+    AC_MSG_ERROR([not found !])
+fi
+AC_LANG_POP
+
+##########################################################################
 # check for ch-cpp-utils library
 ##########################################################################
 #dnl add the external library to the list of libraries which will be used for our test program

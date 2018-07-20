@@ -98,6 +98,11 @@ public:
 	string getNotEmailSmtpUrl();
 	uint64_t getNotEmailAggregate();
 
+	bool getNotKafkaEnable();
+	string getNotKafkaConnection();
+	string getNotKafkaTopic();
+	uint32_t getNotKafkaPartition();
+
 private:
 	uint16_t mPort;
 	string mRoot;
@@ -145,10 +150,14 @@ private:
 	string mNotEmailSmtpUrl;
 	uint64_t mNotEmailAggregate;
 
+	bool mNotKafkaEnable;
+	string mNotKafkaConnection;
+	string mNotKafkaTopic;
+	uint32_t mNotKafkaPartition;
+
 	bool populateConfigValues();
 };
 
 } // End namespace SC.
-
 
 #endif /* SRC_CONFIG_HPP_ */

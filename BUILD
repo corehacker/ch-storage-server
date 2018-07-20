@@ -26,16 +26,18 @@ tf_cc_binary(
         "src/mail-client.hpp", 
         "src/curl-smtp.hpp",
         "src/label-image.cpp",
-        "src/label-image.hpp"
+        "src/label-image.hpp",
+        "src/kafka-client.cpp",
+        "src/kafka-client.hpp"
     ],
     copts = ["-fexceptions", "-DENABLE_TENSORFLOW"],
     linkopts = ["-lm", "-lcurl",
         "-lavformat -lavcodec -lavutil -lswscale -lswresample",
         "-L/usr/local/lib",
-        "-lglog", 
+        "-lglog", "-levent", 
         "-lopencv_core", "-lopencv_videoio", "-lopencv_ccalib", "-lopencv_highgui", 
         "-lopencv_imgproc", "-lopencv_video", "-lopencv_bgsegm", "-lopencv_imgcodecs",
-        "-lch-cpp-utils"],
+        "-lrdkafka++", "-lch-cpp-utils"],
     deps = [
             "//tensorflow/cc:cc_ops",
             "//tensorflow/core:core_cpu",

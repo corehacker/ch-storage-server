@@ -66,6 +66,7 @@ extern "C" {
 
 #include "config.hpp"
 #include "mail-client.hpp"
+#include "kafka-client.hpp"
 
 #ifdef ENABLE_TENSORFLOW
 #include "label-image.hpp"
@@ -227,6 +228,7 @@ private:
 	unordered_map<pthread_t, MotionDetectorThread *> mPoolCtxt;
 
 	MailClient *mMailClient;
+	KafkaClient *mKafkaClient;
 
 	void initiateCameraCapture();
 
@@ -235,6 +237,7 @@ private:
 
 public:
 	MotionDetector(Config *config);
+      MotionDetector(Config *config, KafkaClient *kafkaClient);
 	~MotionDetector();
 	void init();
 	void start();
