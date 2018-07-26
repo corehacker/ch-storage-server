@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
 	initEnv();
 
-	THREAD_SLEEP(config->getRunFor());
+	THREAD_SLEEP(config->shouldRunForever() ? INT64_MAX : config->getRunFor());
 
 	deinitEnv();
 

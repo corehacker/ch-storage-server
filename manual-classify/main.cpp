@@ -95,17 +95,11 @@ static void deinitEnv() {
 	LOG(INFO) << "Deleted config...";
 }
 
-#define THREAD_SLEEP_120S \
-   do { \
-      std::chrono::milliseconds ms(60 * 60 * 6 * 1000); \
-      std::this_thread::sleep_for(ms); \
-   } while(0)
-
 int main(int argc, char **argv) {
 	// Install a signal handler
 	initEnv();
 
-	THREAD_SLEEP(config->getRunFor());
+	THREAD_SLEEP(config->shouldRunForever() ? INT64_MAX : config->getRunFor());
 
 	deinitEnv();
 
