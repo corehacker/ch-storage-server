@@ -11,14 +11,14 @@ steps:
     mkdir -p deps && cd deps
     sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libxine2-dev libv4l-dev libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev libqt4-dev libgtk2.0-dev libtbb-dev libatlas-base-dev libfaac-dev libmp3lame-dev libtheora-dev libvorbis-dev libxvidcore-dev libopencore-amrnb-dev libopencore-amrwb-dev x264 v4l-utils
     mkdir -p opencv && cd opencv && git clone https://github.com/opencv/opencv.git && cd opencv && git checkout 3.3.0 && cd .. && git clone https://github.com/opencv/opencv_contrib.git && cd opencv_contrib && git checkout 3.3.0 && cd ..
-    cd opencv && mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D WITH_TBB=ON -D WITH_V4L=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -D BUILD_EXAMPLES=ON .. && make && sudo make install && cd ../../
+    cd opencv && mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D WITH_TBB=ON -D WITH_V4L=ON -D WITH_QT=ON -D WITH_OPENGL=ON -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -D BUILD_EXAMPLES=ON .. && make -j8 && sudo make -j8 install && cd ../../
     curl -L https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz -o libevent-2.1.8-stable.tar.gz
-    tar xvf libevent-2.1.8-stable.tar.gz && cd libevent-2.1.8-stable && ./configure && make && sudo make install && cd ..
-    wget https://github.com/google/glog/archive/v0.3.5.tar.gz && tar xvf v0.3.5.tar.gz && cd glog-0.3.5 && ./configure && make && sudo make install && cd ..
-    git clone https://github.com/corehacker/ch-cpp-utils.git && cd ch-cpp-utils && ./autogen.sh && ./configure && make && sudo make install && cd ..
+    tar xvf libevent-2.1.8-stable.tar.gz && cd libevent-2.1.8-stable && ./configure && make -j8 && sudo make -j8 install && cd ..
+    wget https://github.com/google/glog/archive/v0.3.5.tar.gz && tar xvf v0.3.5.tar.gz && cd glog-0.3.5 && ./configure && make -j8 && sudo make -j8 install && cd ..
+    git clone https://github.com/corehacker/ch-cpp-utils.git && cd ch-cpp-utils && ./autogen.sh && ./configure && make -j8 && sudo make -j8 install && cd ..
   displayName: 'deps'
 - script: |
     ./autogen.sh
     ./configure
-    make
+    make -j8
   displayName: 'make'
