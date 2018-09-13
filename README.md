@@ -1,6 +1,6 @@
 # ch-storage-server
 
-[![Build Status](https://travis-ci.org/corehacker/ch-storage-server.png?branch=master)](https://travis-ci.org/corehacker/ch-storage-server)
+[![Build Status](https://dev.azure.com/prakashsandeep/prakashsandeep/_apis/build/status/corehacker.ch-storage-server)](https://dev.azure.com/prakashsandeep/prakashsandeep/_build/latest?definitionId=2)
 
 * Server receives HTTP POSTs for inidividual segments.
 * Save in directory structure based on date and hour.
