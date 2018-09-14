@@ -53,9 +53,8 @@ steps:
 - bash: |
     cd deps &&
     git clone https://github.com/edenhill/librdkafka.git &&
-    git checkout v0.11.4 &&
     cd librdkafka && 
-    ./autogen.sh && 
+    git checkout v0.11.4 &&
     ./configure && 
     make -j8 && 
     sudo make -j8 install && 
