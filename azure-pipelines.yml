@@ -52,6 +52,17 @@ steps:
   displayName: 'glog'
 - bash: |
     cd deps &&
+    git clone https://github.com/edenhill/librdkafka.git &&
+    git checkout v0.11.4 &&
+    cd librdkafka && 
+    ./autogen.sh && 
+    ./configure && 
+    make -j8 && 
+    sudo make -j8 install && 
+    cd ..
+  displayName: 'librdkafka'
+- bash: |
+    cd deps &&
     git clone https://github.com/corehacker/ch-cpp-utils.git && 
     cd ch-cpp-utils && 
     ./autogen.sh && 
