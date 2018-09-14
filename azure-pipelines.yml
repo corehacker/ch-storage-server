@@ -39,23 +39,29 @@ steps:
     ./configure && 
     make -j8 && 
     sudo make -j8 install && 
-    cd .. &&
+    cd ..
+  displayName: 'libevent'
+- bash: |
+    cd deps &&
     wget https://github.com/google/glog/archive/v0.3.5.tar.gz && 
     tar xvf v0.3.5.tar.gz && cd glog-0.3.5 && 
     ./configure && 
     make -j8 && 
     sudo make -j8 install && 
-    cd .. &&
+    cd ..
+  displayName: 'glog'
+- bash: |
+    cd deps &&
     git clone https://github.com/corehacker/ch-cpp-utils.git && 
     cd ch-cpp-utils && 
     ./autogen.sh && 
     ./configure && 
     make -j8 && 
     sudo make -j8 install && 
-    cd .. &&
-  displayName: 'deps'
+    cd ..
+  displayName: 'ch-cpp-utils'
 - script: |
     ./autogen.sh &&
     ./configure &&
     make -j8
-  displayName: 'make'
+  displayName: 'ch-storage-server'
