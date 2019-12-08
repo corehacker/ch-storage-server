@@ -103,6 +103,7 @@ Config::Config() :
 	mNotFirebaseTtl = "";
 	mNotFirebaseTopic = "";
 	mNotFirebaseContentType = "";
+	mNotFirebaseIntervalSeconds = 60;
 }
 
 Config::~Config() {
@@ -250,6 +251,8 @@ bool Config::populateConfigValues() {
 	mNotFirebaseTopic = mJson["notifications"]["firebase"]["topic"];
 	LOG(INFO) << "notifications.firebase.topic: " << mNotFirebaseTopic;
 	
+	mNotFirebaseIntervalSeconds = mJson["notifications"]["firebase"]["interval-seconds"];
+	LOG(INFO) << "notifications.firebase.interval-seconds: " << mNotFirebaseIntervalSeconds;
 
 	for(auto target : mJson["notifications"]["firebase"]["targets"]) {
 		mNotFirebaseTargets.push_back(target);
@@ -443,6 +446,10 @@ string Config::getNotFirebaseContentType() {
 
 string Config::getNotFirebaseTopic() {
 	return mNotFirebaseTopic;
+}
+
+uint64_t Config::getNotFirebaseIntervalSeconds() {
+	return mNotFirebaseIntervalSeconds;
 }
 
 vector<string> Config::getNotFirebaseTargets() {

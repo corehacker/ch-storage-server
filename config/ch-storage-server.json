@@ -83,7 +83,8 @@
             "targets": [
                 "",
                 ""
-            ]
+            ],
+            "interval-seconds": 60
         }
     }
 }

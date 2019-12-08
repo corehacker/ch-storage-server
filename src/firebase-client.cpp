@@ -45,6 +45,7 @@
 #include "firebase-client.hpp"
 
 #include <ch-cpp-utils/http/client/http.hpp>
+#include <ch-cpp-utils/utils.hpp>
 
 using std::ostringstream;
 
@@ -52,16 +53,31 @@ using ChCppUtils::Http::Client::HttpRequest;
 using ChCppUtils::Http::Client::HttpResponse;
 using ChCppUtils::Http::Client::HttpRequestLoadEvent;
 
+using ChCppUtils::getEpochNano;
+using ChCppUtils::getDateTime;
+
 namespace SS {
 
 
 FirebaseClient::FirebaseClient(Config *config) {
 	LOG(INFO) << "*****************FirebaseClient";
 	mConfig = config;
+
+	mTimer = new Timer();
+	mTimerEvent = nullptr;
+
+	mLastSentNs = 0;
+	mIntervalNs = mConfig->getNotFirebaseIntervalSeconds() * 1000 * 1000 * 1000;
 }
 
 FirebaseClient::~FirebaseClient() {
 	LOG(INFO) << "*****************~FirebaseClient";
+
+	if(mTimerEvent != nullptr) {
+		delete mTimerEvent;
+	}
+
+	delete mTimer;
 }
 
 void FirebaseClient::_onLoad(HttpRequestLoadEvent *event, void *this_) {
@@ -86,11 +102,25 @@ void FirebaseClient::onLoad(HttpRequestLoadEvent *event) {
   LOG(INFO) << "Request Complete: " << response->getResponseCode();
 }
 
+void FirebaseClient::_onTimerEvent(TimerEvent *event, void *this_) {
+  FirebaseClient *server = (FirebaseClient *) this_;
+  server->onTimerEvent(event);
+}
+
+void FirebaseClient::onTimerEvent(TimerEvent *event) {
+	LOG(INFO) << "Timer fired! Sending firebase notifications.";
+
+	sendTargets();
+
+	delete mTimerEvent;
+	mTimerEvent = nullptr;
+}
+
 bool FirebaseClient::init() {
 	return true;
 }
 
-void FirebaseClient::send(json &message, string &target) {
+void FirebaseClient::send(string &target) {
 	HttpRequest *request = new HttpRequest();
 	request->onLoad(FirebaseClient::_onLoad).bind(this);
 
@@ -138,12 +168,30 @@ void FirebaseClient::send(json &message, string &target) {
 		.send((void *) payloadString.c_str(), payloadString.size());
 }
 
-void FirebaseClient::send(json &message) {
-	LOG(INFO) << "FirebaseClient: Sending notifications.";
+void FirebaseClient::sendTargets() {
+	mLastSentNs = getEpochNano();
 	for(auto target : mConfig->getNotFirebaseTargets()) {
-		send(message, target);
+		send(target);
 	}
+}
 
+void FirebaseClient::send(json &message) {
+
+	uint64_t currentNs = getEpochNano();
+	uint64_t elapsedNs = currentNs - mLastSentNs;
+	LOG(INFO) << "Current: " << currentNs << ", Last: " << mLastSentNs <<
+			", elapsed: " << elapsedNs << ", Interval: " << mIntervalNs;
+
+	if(elapsedNs >= mIntervalNs) {
+		LOG(INFO) << "FirebaseClient: Interval expired. Sending notifications.";
+		sendTargets();
+	} else if (mTimerEvent != nullptr) {
+		LOG(INFO) << "FirebaseClient: Interval not expired. But a timer is already been created.";
+	} else {
+		struct timeval tv = {0};
+		tv.tv_sec = mConfig->getNotFirebaseIntervalSeconds();
+		mTimerEvent = mTimer->create(&tv, FirebaseClient::_onTimerEvent, this);
+	}
 }
 
 } // End namespace SS.
@@ -165,6 +213,16 @@ void FirebaseClient::send(json &message) {
 
 // 	json message;
 // 	message["empty"] = "empty";
+// 	mFirebaseClient->send(message);
+
+// 	THREAD_SLEEP_5S;
+
+// 	mFirebaseClient->send(message);
+
+// 	THREAD_SLEEP_30S;
+// 	THREAD_SLEEP_30S;
+// 	THREAD_SLEEP_5S;
+
 // 	mFirebaseClient->send(message);
 
 // 	THREAD_SLEEP_FOREVER;

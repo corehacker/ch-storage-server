@@ -55,6 +55,7 @@ steps:
     git clone https://github.com/gperftools/gperftools.git &&
     cd gperftools && 
     git checkout gperftools-2.7 &&
+    (./autogen.sh || ./autogen.sh) &&
     ./configure && 
     make -j8 && 
     sudo make -j8 install && 

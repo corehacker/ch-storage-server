@@ -111,6 +111,7 @@ public:
 	string getNotFirebaseTtl();
 	string getNotFirebaseContentType();
 	string getNotFirebaseTopic();
+	uint64_t getNotFirebaseIntervalSeconds();
 	vector<string> getNotFirebaseTargets();
 
 private:
@@ -173,6 +174,7 @@ private:
 	string mNotFirebaseTtl;
 	string mNotFirebaseContentType;
 	string mNotFirebaseTopic;
+	uint64_t mNotFirebaseIntervalSeconds;
 	vector<string> mNotFirebaseTargets;
 
 	bool populateConfigValues();

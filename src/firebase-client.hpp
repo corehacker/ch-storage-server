@@ -41,12 +41,15 @@
  ******************************************************************************/
 
 #include <ch-cpp-utils/http/client/http.hpp>
+#include <ch-cpp-utils/timer.hpp>
 #include <ch-cpp-utils/third-party/json/json.hpp>
 
 #include "config.hpp"
 
 using json = nlohmann::json;
 
+using ChCppUtils::Timer;
+using ChCppUtils::TimerEvent;
 using ChCppUtils::Http::Client::HttpRequest;
 using ChCppUtils::Http::Client::HttpResponse;
 using ChCppUtils::Http::Client::HttpRequestLoadEvent;
@@ -60,9 +63,19 @@ class FirebaseClient {
 private:
 	Config *mConfig;
 
+	uint64_t mLastSentNs;
+	uint64_t mIntervalNs;
+	Timer *mTimer;
+	TimerEvent *mTimerEvent;
+
 	static void _onLoad(HttpRequestLoadEvent *event, void *this_);
 	void onLoad(HttpRequestLoadEvent *event);
-	void send(json &message, string &target);
+
+	static void _onTimerEvent(TimerEvent *event, void *this_);
+	void onTimerEvent(TimerEvent *event);
+
+	void send(string &target);
+	void sendTargets();
 
 public:
 	FirebaseClient(Config *config);
