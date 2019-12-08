@@ -312,7 +312,7 @@ bool MotionDetectorCtxt::detectCv(Mat &frame) {
 
 	if(0 == firstFrame.total()) {
 		firstFrame = capturedImageGrayFrame.clone();
-		LOG(INFO) << "First fame size: " << firstFrame.total();
+		LOG(INFO) << "First frame size: " << firstFrame.total();
 		// render(firstFrameWindow, frame);
 		return false;
 	}
@@ -337,8 +337,8 @@ bool MotionDetectorCtxt::detectCv(Mat &frame) {
 			continue;
 		}
 		// LOG(INFO) << pthread_self() << " Motion Detected; Area: " << area;
-		Rect rect = boundingRect(contours[idx]);
-		rectangle(frame, rect, Scalar(255, 255, 0), 2);
+		// Rect rect = boundingRect(contours[idx]);
+		// rectangle(frame, rect, Scalar(255, 255, 0), 2);
       detected = true;
 	}
 
@@ -497,7 +497,12 @@ MotionDetector::MotionDetector(Config *config) {
 	mConfig = config;
 	mMailClient = new MailClient(config);
 	mKafkaClient = new KafkaClient(config);
+	mFirebaseClient = new FirebaseClient(config);
 	mKafkaClient->init();
+	mFirebaseClient->init();
+	json message;
+	message["empty"] = "empty";
+	mFirebaseClient->send(message);
 	mPool = new ThreadPool(mConfig->getMDThreadCount(), false);
 	LOG(INFO) << "Motion detector thread pool ready to process!";
 }
@@ -507,6 +512,7 @@ MotionDetector::MotionDetector(Config *config, KafkaClient *kafkaClient) {
 	mConfig = config;
 	mMailClient = new MailClient(config);
 	mKafkaClient = kafkaClient;
+	mFirebaseClient = new FirebaseClient(config);
 	mPool = new ThreadPool(mConfig->getMDThreadCount(), false);
 	LOG(INFO) << "Motion detector thread pool ready to process!";
 }
@@ -519,6 +525,7 @@ MotionDetector::~MotionDetector() {
 		delete ctxt;
 	}
 	delete mPool;
+	delete mFirebaseClient;
 	delete mKafkaClient;
 	delete mMailClient;
 }
@@ -592,6 +599,7 @@ void MotionDetector::notify(string &filename) {
 	json j;
 	j["filename"] = filename;
 	mKafkaClient->send(j);
+	mFirebaseClient->send(j);
 }
 
 void MotionDetector::initiateCameraCapture()

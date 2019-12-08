@@ -70,6 +70,20 @@
             "connection": "127.0.0.1:9092",
             "topic": "storage-server-notification",
             "partition": 0
+        },
+        "firebase": {
+            "enable": true,
+            "protocol": "http",
+            "hostname": "fcm.googleapis.com",
+            "url": "/fcm/send",
+            "auth-key": "",
+            "ttl": "100",
+            "content-type": "application/json",
+            "topic": "security",
+            "targets": [
+                "",
+                ""
+            ]
         }
     }
 }

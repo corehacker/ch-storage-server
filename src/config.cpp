@@ -94,6 +94,15 @@ Config::Config() :
 	mNotKafkaConnection = "";
 	mNotKafkaTopic = "";
 	mNotKafkaPartition = 0;
+
+	mNotFirebaseEnable = false;
+	mNotFirebaseProtocol = "";
+	mNotFirebaseHostname = "";
+	mNotFirebaseUrl = "";
+	mNotFirebaseAuthKey = "";
+	mNotFirebaseTtl = "";
+	mNotFirebaseTopic = "";
+	mNotFirebaseContentType = "";
 }
 
 Config::~Config() {
@@ -215,6 +224,36 @@ bool Config::populateConfigValues() {
 
 	mNotKafkaPartition = mJson["notifications"]["kafka"]["partition"];
 	LOG(INFO) << "notifications.kafka.partition: " << mNotKafkaPartition;
+
+
+	mNotFirebaseEnable = mJson["notifications"]["firebase"]["enable"];
+	LOG(INFO) << "notifications.firebase.enable: " << mNotFirebaseEnable;
+
+	mNotFirebaseProtocol = mJson["notifications"]["firebase"]["protocol"];
+	LOG(INFO) << "notifications.firebase.protocol: " << mNotFirebaseProtocol;
+
+	mNotFirebaseHostname = mJson["notifications"]["firebase"]["hostname"];
+	LOG(INFO) << "notifications.firebase.hostname: " << mNotFirebaseHostname;
+
+	mNotFirebaseUrl = mJson["notifications"]["firebase"]["url"];
+	LOG(INFO) << "notifications.firebase.url: " << mNotFirebaseUrl;
+
+	mNotFirebaseAuthKey = mJson["notifications"]["firebase"]["auth-key"];
+	LOG(INFO) << "notifications.firebase.auth-key: " << mNotFirebaseAuthKey;
+
+	mNotFirebaseTtl = mJson["notifications"]["firebase"]["ttl"];
+	LOG(INFO) << "notifications.firebase.ttl: " << mNotFirebaseTtl;
+
+	mNotFirebaseContentType = mJson["notifications"]["firebase"]["content-type"];
+	LOG(INFO) << "notifications.firebase.content-type: " << mNotFirebaseContentType;
+
+	mNotFirebaseTopic = mJson["notifications"]["firebase"]["topic"];
+	LOG(INFO) << "notifications.firebase.topic: " << mNotFirebaseTopic;
+	
+
+	for(auto target : mJson["notifications"]["firebase"]["targets"]) {
+		mNotFirebaseTargets.push_back(target);
+	}
 
 	LOG(INFO) << "----------------------->Config";
 	return true;
@@ -373,6 +412,43 @@ string Config::getNotKafkaTopic() {
 uint32_t Config::getNotKafkaPartition() {
 	return mNotKafkaPartition;
 }
+
+bool Config::getNotFirebaseEnable() {
+	return mNotFirebaseEnable;
+}
+
+string Config::getNotFirebaseProtocol() {
+	return mNotFirebaseProtocol;
+}
+
+string Config::getNotFirebaseHostname() {
+	return mNotFirebaseHostname;
+}
+
+string Config::getNotFirebaseUrl() {
+	return mNotFirebaseUrl;
+}
+
+string Config::getNotFirebaseAuthKey() {
+	return mNotFirebaseAuthKey;
+}
+
+string Config::getNotFirebaseTtl() {
+	return mNotFirebaseTtl;
+}
+
+string Config::getNotFirebaseContentType() {
+	return mNotFirebaseContentType;
+}
+
+string Config::getNotFirebaseTopic() {
+	return mNotFirebaseTopic;
+}
+
+vector<string> Config::getNotFirebaseTargets() {
+	return mNotFirebaseTargets;
+}
+
 
 
 } // End namespace SS.

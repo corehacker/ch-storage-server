@@ -2,7 +2,7 @@
  *
  *  BSD 2-Clause License
  *
- *  Copyright (c) 2017, Sandeep Prakash
+ *  Copyright (c) 2019, Sandeep Prakash
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -28,83 +28,49 @@
  ******************************************************************************/
 
 /*******************************************************************************
- * Copyright (c) 2017, Sandeep Prakash <123sandy@gmail.com>
+ * Copyright (c) 2019, Sandeep Prakash <123sandy@gmail.com>
  *
- * \file   main.cpp
+ * \file   firebase-client.hpp
  *
  * \author Sandeep Prakash
  *
- * \date   Nov 02, 2017
+ * \date   Dec 07, 2019
  *
  * \brief
  *
  ******************************************************************************/
 
-#include <stdlib.h>
-#include <signal.h>
-#include <csignal>
-#include <iostream>
-#include <ch-cpp-utils/utils.hpp>
-#include <glog/logging.h>
-#include "storage-server.hpp"
+#include <ch-cpp-utils/http/client/http.hpp>
+#include <ch-cpp-utils/third-party/json/json.hpp>
 
-using SS::StorageServer;
-using SS::Config;
-using ChCppUtils::daemonizeProcess;
+#include "config.hpp"
 
-static Config *config = nullptr;
-static StorageServer *server = nullptr;
+using json = nlohmann::json;
 
-static void initEnv();
-static void deinitEnv();
+using ChCppUtils::Http::Client::HttpRequest;
+using ChCppUtils::Http::Client::HttpResponse;
+using ChCppUtils::Http::Client::HttpRequestLoadEvent;
 
-static void eventFatalCallback(int err) {
-   LOG(FATAL) << "[libevent] ****FATAL ERROR**** (" << err << ")";
-   exit(err);
-}
+#ifndef SRC_FIREBASE_CLIENT_HPP_
+#define SRC_FIREBASE_CLIENT_HPP_
 
-static void initEnv() {
-	config = new Config();
-	config->init();
+namespace SS {
 
-	// Initialize Google's logging library.
-	if(config->shouldLogToConsole()) {
-		LOG(INFO) << "LOGGING to console.";
-	} else {
-		LOG(INFO) << "Not LOGGING to console.";
-		google::InitGoogleLogging("ch-storage-server");
-	}
+class FirebaseClient {
+private:
+	Config *mConfig;
 
-	google::InstallFailureSignalHandler();
-	event_set_fatal_callback(eventFatalCallback);
+	static void _onLoad(HttpRequestLoadEvent *event, void *this_);
+	void onLoad(HttpRequestLoadEvent *event);
+	void send(json &message, string &target);
 
-	if(config->isDaemon()) {
-		daemonizeProcess();
-	}
+public:
+	FirebaseClient(Config *config);
+	~FirebaseClient();
+	bool init();
+	void send(json &message);
+};
 
-	server = new StorageServer(config);
-	server->start();
-}
+} // End namespace SS.
 
-static void deinitEnv() {
-	LOG(INFO) << "Stopping server...";
-	server->stop();
-	LOG(INFO) << "Stopped server...";
-	delete server;
-	LOG(INFO) << "Deleted server...";
-	delete config;
-	LOG(INFO) << "Deleted config...";
-}
-
-int main(int argc, char **argv) {
-
-	initEnv();
-
-	THREAD_SLEEP(config->shouldRunForever() ? INT64_MAX : config->getRunFor());
-
-	deinitEnv();
-
-	return 0;
-}
-
-
+#endif /* SRC_FIREBASE_CLIENT_HPP_ */

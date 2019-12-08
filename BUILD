@@ -28,7 +28,9 @@ tf_cc_binary(
         "src/label-image.cpp",
         "src/label-image.hpp",
         "src/kafka-client.cpp",
-        "src/kafka-client.hpp"
+        "src/kafka-client.hpp",
+        "src/firebase-client.cpp",
+        "src/firebase-client.hpp"
     ],
     copts = ["-fexceptions", "-DENABLE_TENSORFLOW"],
     linkopts = ["-lm", "-lcurl",

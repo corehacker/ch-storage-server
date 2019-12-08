@@ -103,6 +103,16 @@ public:
 	string getNotKafkaTopic();
 	uint32_t getNotKafkaPartition();
 
+	bool getNotFirebaseEnable();
+	string getNotFirebaseProtocol();
+	string getNotFirebaseHostname();
+	string getNotFirebaseUrl();
+	string getNotFirebaseAuthKey();
+	string getNotFirebaseTtl();
+	string getNotFirebaseContentType();
+	string getNotFirebaseTopic();
+	vector<string> getNotFirebaseTargets();
+
 private:
 	uint16_t mPort;
 	string mRoot;
@@ -154,6 +164,16 @@ private:
 	string mNotKafkaConnection;
 	string mNotKafkaTopic;
 	uint32_t mNotKafkaPartition;
+
+	bool mNotFirebaseEnable;
+	string mNotFirebaseProtocol;
+	string mNotFirebaseHostname;
+	string mNotFirebaseUrl;
+	string mNotFirebaseAuthKey;
+	string mNotFirebaseTtl;
+	string mNotFirebaseContentType;
+	string mNotFirebaseTopic;
+	vector<string> mNotFirebaseTargets;
 
 	bool populateConfigValues();
 };

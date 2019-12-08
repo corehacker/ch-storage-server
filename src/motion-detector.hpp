@@ -62,11 +62,12 @@ extern "C" {
 
 #include <ch-cpp-utils/semaphore.hpp>
 #include <ch-cpp-utils/thread-pool.hpp>
-#include <ch-cpp-utils/http-request.hpp>
+#include <ch-cpp-utils/http/client/http.hpp>
 
 #include "config.hpp"
 #include "mail-client.hpp"
 #include "kafka-client.hpp"
+#include "firebase-client.hpp"
 
 #ifdef ENABLE_TENSORFLOW
 #include "label-image.hpp"
@@ -229,6 +230,7 @@ private:
 
 	MailClient *mMailClient;
 	KafkaClient *mKafkaClient;
+   FirebaseClient *mFirebaseClient;
 
 	void initiateCameraCapture();
 
