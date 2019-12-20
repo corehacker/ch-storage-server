@@ -13,7 +13,7 @@ AC_CHECK_TOOLS(CXX, [$CCC c++ g++ gcc CC cxx cc++ cl], gcc)
 AC_LANG([C])
 # AC_CHECK_HEADER_STDBOOL
 
-CXXFLAGS="$CXXFLAGS -Wall -std=c++0x"
+CXXFLAGS="$CXXFLAGS -Wall -std=c++0x -D_GLIBCXX_USE_CXX11_ABI=0 -I/usr/local/lib/python2.7/dist-packages/tensorflow_core/include"
 LIBS="-lpthread -lrt -lm $LIBS"
 
 trylibeventdir=""
@@ -221,6 +221,57 @@ fi
 AC_LANG_POP
 
 
+
+
+
+##########################################################################
+# Enable tensorflow - Basically defines ENABLE_TENSORFLOW compile time flag.
+##########################################################################
+
+# This adds the option of compiling without using the ctemplate library,
+# which has proved troublesome for compilation on some platforms
+AC_ARG_ENABLE(tf,
+  [  --enable-tf             Enables tensorflow based motion detection.],
+  [case "${enableval}" in
+     yes | no ) ENABLE_TF="${enableval}" ;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-tf) ;;
+   esac],
+  [ENABLE_TF="no"]
+)
+
+dnl Make sure we register this option with Automake, so we know whether to
+dnl descend into enable_tf for more configuration or not
+AM_CONDITIONAL([ENABLE_TF], [test "x$ENABLE_TF" = "xyes"])
+
+# Define ENABLE_TENSORFLOW in config.h if we're going to compile against it
+if test "x$ENABLE_TF" = "xyes"; then
+    AC_DEFINE([ENABLE_TENSORFLOW], [], ["build using tensorflow library"])
+    AC_MSG_NOTICE([Tensorflow will be used for motion detection.])
+else
+    AC_MSG_NOTICE([Tensorflow will not be used for motion detection.])
+fi
+
+##########################################################################
+# check for libtensorflow_framework.so library
+##########################################################################
+#dnl add the external library to the list of libraries which will be used for our test program
+LIBS="$LIBS -L/usr/local/lib/python2.7/dist-packages/tensorflow_core -ltensorflow_framework"
+
+AC_LANG_PUSH([C++])
+#dnl check for the presence of 'libtotest'
+AC_MSG_CHECKING([for the tensorflow_framework availability])
+AC_LINK_IFELSE([
+		AC_LANG_PROGRAM([#include <tensorflow/core/public/session.h>],
+				[tensorflow::NewSession(tensorflow::SessionOptions())])
+		],
+		[LIB_TF_PRESENCE=1], [LIB_TF_PRESENCE=0])
+
+if test "$LIB_TF_PRESENCE" = "1"; then
+	AC_MSG_RESULT([found])
+else
+	AC_MSG_ERROR([not found !])
+fi
+AC_LANG_POP
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES(Makefile \
