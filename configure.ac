@@ -208,7 +208,7 @@ AC_LANG_PUSH([C++])
 #dnl check for the presence of 'libtotest'
 AC_MSG_CHECKING([for the ch-cpp-utils availability])
 AC_LINK_IFELSE([
-                AC_LANG_PROGRAM([#include <ch-cpp-utils/http-server.hpp>],
+                AC_LANG_PROGRAM([#include <ch-cpp-utils/http/server/http.hpp>],
                                 [ChCppUtils::Http::Server::HttpServer pool(8888,1)])
                 ],
                 [LIBCH_CH_CPP_UTILS_PRESENCE=1], [LIBCH_CH_CPP_UTILS_PRESENCE=0])
