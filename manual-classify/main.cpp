@@ -44,7 +44,7 @@
 #include <signal.h>
 #include <csignal>
 #include <iostream>
-#include <ch-cpp-utils/http-server.hpp>
+#include <ch-cpp-utils/http/server/http.hpp>
 #include <ch-cpp-utils/utils.hpp>
 #include <glog/logging.h>
 

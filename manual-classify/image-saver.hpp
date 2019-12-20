@@ -41,7 +41,7 @@
  ******************************************************************************/
 
 #include <ch-cpp-utils/semaphore.hpp>
-#include <ch-cpp-utils/http-server.hpp>
+#include <ch-cpp-utils/http/server/http.hpp>
 #include <ch-cpp-utils/timer.hpp>
 #include <ch-cpp-utils/utils.hpp>
 #include <ch-cpp-utils/fts.hpp>
