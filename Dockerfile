@@ -83,6 +83,8 @@ RUN mkdir -p /etc/ch-storage-server
 
 COPY ./ch-configs/ch-storage-server /etc/ch-storage-server
 
+CMD [ "ch-storage-server" ]
+
 
 # ln -s /usr/local/lib/python2.7/dist-packages/tensorflow_core/libtensorflow_framework.so.1 /usr/local/lib/libtensorflow_framework.so
 # ln -s /usr/local/lib/python2.7/dist-packages/tensorflow_core/include/tensorflow /usr/local/include/tensorflow
