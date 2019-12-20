@@ -5,6 +5,7 @@ ch_storage_server_SOURCES =  \
 						storage-server.cpp \
 						config.cpp \
 						motion-detector.cpp \
+						label-image.cpp \
 						kafka-client.cpp \
 						mail-client.cpp \
 						curl-smtp.cpp \

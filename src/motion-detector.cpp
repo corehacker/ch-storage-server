@@ -40,6 +40,8 @@
  *
  ******************************************************************************/
 
+#include "config.h"
+
 #include <sstream>
 #include <ch-cpp-utils/third-party/json/json.hpp>
 
