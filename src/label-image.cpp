@@ -42,7 +42,8 @@
 
 #include <ch-cpp-utils/utils.hpp>
 #include "label-image.hpp"
-// #include <tensorflow/cc/ops/standard_ops.h>
+#include <tensorflow/cc/ops/standard_ops.h>
+#include <tensorflow/cc/framework/scope.h>
 #include <glog/logging.h>
 
 using ChCppUtils::getEpochNano;
