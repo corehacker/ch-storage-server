@@ -7,11 +7,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libxvidcore-dev libopencore-amrnb-dev libopencore-amrwb-dev x264 v4l-utils \
     libcurl4-gnutls-dev ffmpeg libavresample-dev libgstreamer-plugins-good1.0-dev \
     libgstreamer-plugins-base1.0-dev gphoto2 libgphoto2* jasper doxygen qtbase5-dev \
-    pylint flake8  vtk7
-
-RUN apt-get install -y --no-install-recommends git wget curl
-
-RUN mkdir -p /deps && cd /deps
+    pylint flake8  vtk7 autoconf automake libtool git wget curl && mkdir -p /deps && cd /deps
 
 RUN mkdir -p opencv && \ 
     cd opencv && \
@@ -45,8 +41,6 @@ RUN cd /deps && \
     make -j8 && \
     make -j8 install
 
-RUN apt-get install -y --no-install-recommends autoconf automake libtool
-
 RUN cd /deps && \
     git clone https://github.com/gperftools/gperftools.git && \
     cd gperftools && \
@@ -72,9 +66,6 @@ RUN cd /deps && \
     make -j8 && \
     make -j8 install
 
-#RUN ln -s /usr/local/lib/libch-cpp-utils.so /usr/lib/libch-cpp-utils.so && \
-#    ln -s /usr/local/include/ch-cpp-utils /usr/include/ch-cpp-utils
-
 # TODO Remove this link once we fix the code.
 RUN ln -s /usr/local/include/opencv4/opencv2 /usr/local/include/opencv2
 
@@ -85,3 +76,13 @@ RUN cd /deps && \
     ./configure && \
     make -j8 && \
     make -j8 install
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+RUN mkdir -p /etc/ch-storage-server
+
+COPY ./ch-configs/ch-storage-server /etc/ch-storage-server
+
+
+# ln -s /usr/local/lib/python2.7/dist-packages/tensorflow_core/libtensorflow_framework.so.1 /usr/local/lib/libtensorflow_framework.so
+# ln -s /usr/local/lib/python2.7/dist-packages/tensorflow_core/include/tensorflow /usr/local/include/tensorflow
