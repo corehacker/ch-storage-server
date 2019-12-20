@@ -44,6 +44,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/types_c.h>
+#include <opencv2/videoio/legacy/constants_c.h>
 
 #include <event2/event.h>
 #include <event2/http.h>

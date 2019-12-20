@@ -7,5 +7,6 @@ ch_storage_server_SOURCES =  \
 						motion-detector.cpp \
 						kafka-client.cpp \
 						mail-client.cpp \
-						curl-smtp.cpp
+						curl-smtp.cpp \
+						firebase-client.cpp
 
