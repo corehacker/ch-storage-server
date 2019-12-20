@@ -264,15 +264,13 @@ if test "x$ENABLE_TF" = "xyes"; then
    
     if test "$LIB_TF_PRESENCE" = "1"; then
     	AC_MSG_RESULT([found])
+	AC_DEFINE([ENABLE_TENSORFLOW], [], ["build using tensorflow library"])
+	AC_MSG_NOTICE([Tensorflow will be used for motion detection.])
     else
         AC_MSG_ERROR([not found !])
     fi
     AC_LANG_POP
 
-
-
-    AC_DEFINE([ENABLE_TENSORFLOW], [], ["build using tensorflow library"])
-    AC_MSG_NOTICE([Tensorflow will be used for motion detection.])
 else
     AC_MSG_NOTICE([Tensorflow will not be used for motion detection.])
 fi
