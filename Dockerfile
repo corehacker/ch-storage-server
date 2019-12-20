@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.15.0
+FROM floopcz/tensorflow_cc:ubuntu-shared
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends cmake \
     libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libxine2-dev libv4l-dev \
@@ -73,7 +73,7 @@ RUN cd /deps && \
     git clone https://github.com/corehacker/ch-storage-server.git && \
     cd ch-storage-server && \
     ./autogen.sh && \
-    ./configure && \
+    ./configure --enable-tf=yes && \
     make -j8 && \
     make -j8 install
 
