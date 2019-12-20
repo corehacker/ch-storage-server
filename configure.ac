@@ -222,6 +222,35 @@ AC_LANG_POP
 
 
 
+
+
+##########################################################################
+# Enable tensorflow - Basically defines ENABLE_TENSORFLOW compile time flag.
+##########################################################################
+
+# This adds the option of compiling without using the ctemplate library,
+# which has proved troublesome for compilation on some platforms
+AC_ARG_ENABLE(tf,
+  [  --enable-tf             Enables tensorflow based motion detection.],
+  [case "${enableval}" in
+     yes | no ) ENABLE_TF="${enableval}" ;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-tf) ;;
+   esac],
+  [ENABLE_TF="no"]
+)
+
+dnl Make sure we register this option with Automake, so we know whether to
+dnl descend into enable_tf for more configuration or not
+AM_CONDITIONAL([ENABLE_TF], [test "x$ENABLE_TF" = "xyes"])
+
+# Define ENABLE_TENSORFLOW in config.h if we're going to compile against it
+if test "x$ENABLE_TF" = "xyes"; then
+    AC_DEFINE([ENABLE_TENSORFLOW], [], ["build using tensorflow library"])
+    AC_MSG_NOTICE([Tensorflow will be used for motion detection.])
+else
+    AC_MSG_NOTICE([Tensorflow will not be used for motion detection.])
+fi
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES(Makefile \
                 src/Makefile \
