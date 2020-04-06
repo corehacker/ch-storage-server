@@ -509,12 +509,12 @@ MotionDetector::MotionDetector(Config *config) {
 	LOG(INFO) << "Motion detector thread pool ready to process!";
 }
 
-MotionDetector::MotionDetector(Config *config, KafkaClient *kafkaClient) {
+MotionDetector::MotionDetector(Config *config, KafkaClient *kafkaClient, FirebaseClient *firebaseClient) {
 	LOG(INFO) << "*****************MotionDetector";
 	mConfig = config;
 	mMailClient = new MailClient(config);
 	mKafkaClient = kafkaClient;
-	mFirebaseClient = new FirebaseClient(config);
+	mFirebaseClient = firebaseClient;
 	mPool = new ThreadPool(mConfig->getMDThreadCount(), false);
 	LOG(INFO) << "Motion detector thread pool ready to process!";
 }

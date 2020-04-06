@@ -79,6 +79,7 @@ private:
 	MotionDetector *mMotionDetector;
 	KafkaClient *mKafkaClient;
 	ProcStat *procStat;
+	FirebaseClient *mFirebaseClient;
 
 	string getDestinationDir(RequestEvent *event);
 	string getDestinationSegmentPath(RequestEvent *event);
@@ -93,6 +94,12 @@ private:
 
 	static void _onDummyRequest(RequestEvent *event, void *this_);
 	void onDummyRequest(RequestEvent *event);
+
+	static void _onFirebaseTargetDeviceRegister(RequestEvent *event, void *this_);
+	void onFirebaseTargetDeviceRegister(RequestEvent *event);
+
+	static void _onFirebaseTargetDevice(RequestEvent *event, void *this_);
+	void onFirebaseTargetDevice(RequestEvent *event);
 
 	static void _onFilePurge(OnFileData &data, void *this_);
 	void onFilePurge(OnFileData &data);

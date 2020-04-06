@@ -241,7 +241,7 @@ private:
 
 public:
 	MotionDetector(Config *config);
-      MotionDetector(Config *config, KafkaClient *kafkaClient);
+   MotionDetector(Config *config, KafkaClient *kafkaClient, FirebaseClient *firebaseClient);
 	~MotionDetector();
 	void init();
 	void start();

@@ -41,6 +41,7 @@
  ******************************************************************************/
 
 #include <sstream>
+#include <fstream>
 #include <glog/logging.h>
 #include "firebase-client.hpp"
 
@@ -48,6 +49,8 @@
 #include <ch-cpp-utils/utils.hpp>
 
 using std::ostringstream;
+using std::ifstream;
+using std::ofstream;
 
 using ChCppUtils::Http::Client::HttpRequest;
 using ChCppUtils::Http::Client::HttpResponse;
@@ -55,6 +58,7 @@ using ChCppUtils::Http::Client::HttpRequestLoadEvent;
 
 using ChCppUtils::getEpochNano;
 using ChCppUtils::getDateTime;
+using ChCppUtils::fileExists;
 
 namespace SS {
 
@@ -68,6 +72,9 @@ FirebaseClient::FirebaseClient(Config *config) {
 
 	mLastSentNs = 0;
 	mIntervalNs = mConfig->getNotFirebaseIntervalSeconds() * 1000 * 1000 * 1000;
+
+	etcTargetsPath = "/etc/ch-storage-server/ch-firebase-targets.json";
+	localTargetsPath = "./config/ch-firebase-targets.json";
 }
 
 FirebaseClient::~FirebaseClient() {
@@ -194,6 +201,73 @@ void FirebaseClient::send(json &message) {
 	}
 }
 
+bool FirebaseClient::selectConfigFile() {
+	if(!fileExists(etcTargetsPath)) {
+		if(!fileExists(localTargetsPath)) {
+			LOG(ERROR) << "No config file found in /etc/ch-storage-client or " <<
+					"./config. I am looking for ch-firebase-targets.json";
+			return false;
+		} else {
+			LOG(INFO) << "Found config file "
+					"./config/ch-firebase-targets.json";
+			selectedConfigPath = localTargetsPath;
+			return true;
+		}
+	} else {
+		LOG(INFO) << "Found config file "
+				"/etc/ch-storage-client/ch-firebase-targets.json";
+		selectedConfigPath = etcTargetsPath;
+		return true;
+	}
+}
+
+bool FirebaseClient::addTarget(string &target) {
+
+	if(selectConfigFile()) {
+
+		ifstream config(selectedConfigPath);
+		config >> mTargetsJson;
+
+		json newTarget;
+
+		newTarget = json::parse(target);
+
+		string instanceId = newTarget.value("instanceId", "");
+		string deviceId = newTarget.value("deviceId", "");
+		string deviceName = newTarget.value("deviceName", "");
+
+		if(instanceId.length() > 0 && deviceId.length() > 0 && deviceName.length() > 0) {
+			mTargetsJson[deviceId] = newTarget;
+
+			ofstream newConfig(selectedConfigPath);
+
+			std::cout << std::setw(4) << mTargetsJson << std::endl;
+
+			newConfig << std::setw(4) << mTargetsJson << std::endl;
+
+			newConfig.close();
+
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+
+	
+}
+
+string FirebaseClient::getTargets() {
+	if(selectConfigFile()) {
+		ifstream config(selectedConfigPath);
+		config >> mTargetsJson;
+		return mTargetsJson.dump();
+	} else {
+		return "{}";
+	}
+}
+
 } // End namespace SS.
 
 // #include "config.hpp"
@@ -211,20 +285,25 @@ void FirebaseClient::send(json &message) {
 // 	mFirebaseClient = new FirebaseClient(config);
 // 	mFirebaseClient->init();
 
-// 	json message;
-// 	message["empty"] = "empty";
-// 	mFirebaseClient->send(message);
+// 	std::cout << mFirebaseClient->getTargets() << std::endl;
 
-// 	THREAD_SLEEP_5S;
+// 	string target = "{\"instanceId\": \"instance-id\",\"deviceId\":\"device-id\", \"deviceName\": \"device-name\"}";
+// 	mFirebaseClient->addTarget(target);
 
-// 	mFirebaseClient->send(message);
+// 	std::cout << mFirebaseClient->getTargets() << std::endl;
 
-// 	THREAD_SLEEP_30S;
-// 	THREAD_SLEEP_30S;
-// 	THREAD_SLEEP_5S;
+// 	// json message;
+// 	// message["empty"] = "empty";
+// 	// mFirebaseClient->send(message);
 
-// 	mFirebaseClient->send(message);
+// 	// THREAD_SLEEP_5S;
 
-// 	THREAD_SLEEP_FOREVER;
+// 	// mFirebaseClient->send(message);
 
-// }
+// 	// THREAD_SLEEP_30S;
+// 	// THREAD_SLEEP_30S;
+// 	// THREAD_SLEEP_5S;
+
+// 	// mFirebaseClient->send(message);
+
+// 	THREAD_SLEEP_FOREVER;/firebase/target/device/register

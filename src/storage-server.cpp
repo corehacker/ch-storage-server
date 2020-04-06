@@ -119,7 +119,9 @@ StorageServer::StorageServer(Config *config) {
 	mKafkaClient = new KafkaClient(mConfig);
 	mKafkaClient->init();
 
-	mMotionDetector = new MotionDetector(mConfig, mKafkaClient);
+	mFirebaseClient = new FirebaseClient(config);
+
+	mMotionDetector = new MotionDetector(mConfig, mKafkaClient, mFirebaseClient);
 	if(mConfig->getCameraEnable()) {
 		mMotionDetector->init();
 		mMotionDetector->start();
@@ -380,6 +382,47 @@ void StorageServer::onEmptyDir(OnFileData &data) {
 	}
 }
 
+void StorageServer::_onFirebaseTargetDeviceRegister(RequestEvent *event, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onFirebaseTargetDeviceRegister(event);
+}
+
+void StorageServer::onFirebaseTargetDeviceRegister(RequestEvent *event) {
+	LOG(INFO) << "Firebase Target Device Register";
+
+	string body((char *) event->getBody());
+
+	LOG(INFO) << "Firebase Target Device Register: " << body;
+
+	if(mFirebaseClient->addTarget(body)) {
+		send200OK(event->getRequest()->getRequest());
+	} else {
+		send400BadRequest(event->getRequest()->getRequest());
+	}
+}
+
+void StorageServer::_onFirebaseTargetDevice(RequestEvent *event, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onFirebaseTargetDevice(event);
+}
+
+void send200OK(evhttp_request *request, string &body) {
+	struct evbuffer *buffer = evhttp_request_get_output_buffer(request);
+	if (!buffer)
+		return;
+	evbuffer_add_printf(buffer, body.c_str());
+	evhttp_send_reply(request, HTTP_OK, "", buffer);
+
+	LOG(INFO) << "Sending " << HTTP_OK;
+}
+
+void StorageServer::onFirebaseTargetDevice(RequestEvent *event) {
+	LOG(INFO) << "Firebase Target Device";
+
+	string targets = mFirebaseClient->getTargets();
+
+	send200OK(event->getRequest()->getRequest(), targets);
+}
 
 void StorageServer::registerPaths() {
 	auto streams = mConfig->mJson["streams"];
@@ -398,6 +441,9 @@ void StorageServer::registerPaths() {
 				StorageServer::_onRequest, this);
 	}
 	mServer->route(EVHTTP_REQ_POST, "/dummy/motion", StorageServer::_onDummyRequest, this);
+
+	mServer->route(EVHTTP_REQ_POST, "/firebase/target/device/register", StorageServer::_onFirebaseTargetDeviceRegister, this);
+	mServer->route(EVHTTP_REQ_GET, "/firebase/target/devices", StorageServer::_onFirebaseTargetDevice, this);
 }
 
 void StorageServer::start() {

@@ -77,11 +77,21 @@ private:
 	void send(string &target);
 	void sendTargets();
 
+	bool selectConfigFile();
+
+	string selectedConfigPath;
+	string etcTargetsPath;
+	string localTargetsPath;
+
+	json mTargetsJson;
+
 public:
 	FirebaseClient(Config *config);
 	~FirebaseClient();
 	bool init();
 	void send(json &message);
+	bool addTarget(string &target);
+	string getTargets();
 };
 
 } // End namespace SS.
