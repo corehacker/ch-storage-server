@@ -79,6 +79,8 @@ private:
 
 	bool selectConfigFile();
 
+	vector<string> getFirebaseTargets();
+
 	string selectedConfigPath;
 	string etcTargetsPath;
 	string localTargetsPath;

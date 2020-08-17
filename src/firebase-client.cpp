@@ -175,9 +175,26 @@ void FirebaseClient::send(string &target) {
 		.send((void *) payloadString.c_str(), payloadString.size());
 }
 
+vector<string> FirebaseClient::getFirebaseTargets() {
+	string targetsFile = mConfig->getNotFirebaseTargetsJson();
+	ifstream targetsFileStream(targetsFile);
+	json targetsJson;
+	targetsFileStream >> targetsJson;
+
+	json targetsMap = targetsJson["devices"];
+
+	vector<string> v;
+	for (auto it = targetsMap.begin(); it != targetsMap.end(); ++it) {
+		std::cout << it.key() << "\n";
+		std::cout << it.value() << "\n";
+		v.push_back(it.value());
+	}
+	return v;
+}
+
 void FirebaseClient::sendTargets() {
 	mLastSentNs = getEpochNano();
-	for(auto target : mConfig->getNotFirebaseTargets()) {
+	for(auto target : getFirebaseTargets()) {
 		send(target);
 	}
 }

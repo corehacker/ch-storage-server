@@ -104,6 +104,7 @@ Config::Config() :
 	mNotFirebaseTopic = "";
 	mNotFirebaseContentType = "";
 	mNotFirebaseIntervalSeconds = 60;
+	mNotFirebaseTargetsJson = "";
 }
 
 Config::~Config() {
@@ -257,6 +258,9 @@ bool Config::populateConfigValues() {
 	for(auto target : mJson["notifications"]["firebase"]["targets"]) {
 		mNotFirebaseTargets.push_back(target);
 	}
+
+	mNotFirebaseTargetsJson = mJson["notifications"]["firebase"]["targets-json"];
+	LOG(INFO) << "notifications.firebase.targets-json: " << mNotFirebaseTargetsJson;
 
 	LOG(INFO) << "----------------------->Config";
 	return true;
@@ -456,6 +460,8 @@ vector<string> Config::getNotFirebaseTargets() {
 	return mNotFirebaseTargets;
 }
 
-
+string Config::getNotFirebaseTargetsJson() {
+	return mNotFirebaseTargetsJson;
+}
 
 } // End namespace SS.

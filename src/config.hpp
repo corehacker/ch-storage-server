@@ -113,6 +113,7 @@ public:
 	string getNotFirebaseTopic();
 	uint64_t getNotFirebaseIntervalSeconds();
 	vector<string> getNotFirebaseTargets();
+	string getNotFirebaseTargetsJson();
 
 private:
 	uint16_t mPort;
@@ -176,6 +177,7 @@ private:
 	string mNotFirebaseTopic;
 	uint64_t mNotFirebaseIntervalSeconds;
 	vector<string> mNotFirebaseTargets;
+	string mNotFirebaseTargetsJson;
 
 	bool populateConfigValues();
 };

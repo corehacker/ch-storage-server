@@ -84,7 +84,8 @@
                 "",
                 ""
             ],
-            "interval-seconds": 60
+            "interval-seconds": 60,
+            "targets-json": "targets.json"
         }
     }
 }
