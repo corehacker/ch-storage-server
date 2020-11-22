@@ -216,6 +216,7 @@ void FirebaseClient::send(json &message) {
 	} else if (mTimerEvent != nullptr) {
 		LOG(INFO) << "FirebaseClient: Interval not expired. But a timer is already been created.";
 	} else {
+		LOG(INFO) << "FirebaseClient: Interval not expired. Creating a timer.";
 		struct timeval tv = {0};
 		tv.tv_sec = mConfig->getNotFirebaseIntervalSeconds();
 		mTimerEvent = mTimer->create(&tv, FirebaseClient::_onTimerEvent, this);
