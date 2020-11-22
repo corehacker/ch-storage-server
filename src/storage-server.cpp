@@ -298,6 +298,19 @@ void StorageServer::onDummyRequest(RequestEvent *event) {
 	send200OK(event->getRequest()->getRequest());
 }
 
+void StorageServer::_onDummyNotifyRequest(RequestEvent *event, void *this_) {
+	StorageServer *server = (StorageServer *) this_;
+	server->onDummyNotifyRequest(event);
+}
+
+void StorageServer::onDummyNotifyRequest(RequestEvent *event) {
+	LOG(INFO) << "Dummy Notification Request";
+	json dummyMessage;
+	dummyMessage["empty"] = "Dummy notification message";
+	mFirebaseClient->send(dummyMessage);
+	send200OK(event->getRequest()->getRequest());
+}
+
 void StorageServer::_onFilePurge (OnFileData &data, void *this_) {
 	StorageServer *server = (StorageServer *) this_;
 	server->onFilePurge(data);
@@ -441,6 +454,7 @@ void StorageServer::registerPaths() {
 				StorageServer::_onRequest, this);
 	}
 	mServer->route(EVHTTP_REQ_POST, "/dummy/motion", StorageServer::_onDummyRequest, this);
+	mServer->route(EVHTTP_REQ_POST, "/dummy/notify", StorageServer::_onDummyNotifyRequest, this);
 
 	mServer->route(EVHTTP_REQ_POST, "/firebase/target/device/register", StorageServer::_onFirebaseTargetDeviceRegister, this);
 	mServer->route(EVHTTP_REQ_GET, "/firebase/target/devices", StorageServer::_onFirebaseTargetDevice, this);

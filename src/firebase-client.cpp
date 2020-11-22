@@ -177,6 +177,9 @@ void FirebaseClient::send(string &target) {
 
 vector<string> FirebaseClient::getFirebaseTargets() {
 	string targetsFile = mConfig->getNotFirebaseTargetsJson();
+
+	LOG(INFO) << "Firebase targets file: " << targetsFile;
+
 	ifstream targetsFileStream(targetsFile);
 	json targetsJson;
 	targetsFileStream >> targetsJson;
@@ -185,8 +188,9 @@ vector<string> FirebaseClient::getFirebaseTargets() {
 
 	vector<string> v;
 	for (auto it = targetsMap.begin(); it != targetsMap.end(); ++it) {
-		std::cout << it.key() << "\n";
-		std::cout << it.value() << "\n";
+		// std::cout << it.key() << "\n";
+		// std::cout << it.value() << "\n";
+		LOG(INFO) << "Target: " << it.key() << " -> " << it.value();
 		v.push_back(it.value());
 	}
 	return v;

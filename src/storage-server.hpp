@@ -95,6 +95,9 @@ private:
 	static void _onDummyRequest(RequestEvent *event, void *this_);
 	void onDummyRequest(RequestEvent *event);
 
+	static void _onDummyNotifyRequest(RequestEvent *event, void *this_);
+	void onDummyNotifyRequest(RequestEvent *event);
+
 	static void _onFirebaseTargetDeviceRegister(RequestEvent *event, void *this_);
 	void onFirebaseTargetDeviceRegister(RequestEvent *event);
 
